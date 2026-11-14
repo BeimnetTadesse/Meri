@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Savanna LMS Hub — Host Course View</title>
+    <!-- Modern typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Ethiopic:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        margin: 0;
+        font-family: 'Inter', -apple-system, sans-serif;
+        background-color: #f8fafc;
+        color: #0f172a;
+      }
+
+      /* Host Navigation Bar matching design */
+      .host-header {
+        background: #ffffff;
+        border-bottom: 1px solid #e2e8f0;
+        padding: 0.85rem 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .host-brand {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+      .host-logo {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        background: #16a34a;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 1.1rem;
+      }
+      .host-title {
+        font-size: 1.05rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .host-subtitle {
+        font-size: 0.75rem;
+        color: #64748b;
+      }
+      .host-badge-online {
+        background: #dcfce7;
+        color: #15803d;
+        padding: 2px 8px;
+        border-radius: 9999px;
+        font-size: 0.7rem;
+        font-weight: 600;
+      }
+      .host-controls {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+      .demo-switcher-btn {
+        background: #0f172a;
+        color: #ffffff;
+        border: none;
+        padding: 0.45rem 1rem;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: opacity 0.2s;
+      }
+      .demo-switcher-btn:hover {
+        opacity: 0.9;
+      }
+
+      /* Host Content Page */
+      .page-container {
+        max-width: 900px;
+        margin: 2rem auto;
+        padding: 0 1.5rem 6rem 1.5rem;
+      }
+      .breadcrumbs {
+        font-size: 0.85rem;
+        color: #64748b;
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .content-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 2.5rem;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+      }
+      .page-header-row {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
+      }
+      .page-title {
+        font-size: 1.85rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin: 0;
+      }
+      .est-read {
+        background: #dcfce7;
+        color: #166534;
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 9999px;
+      }
+      .lead-text {
+        font-size: 1.05rem;
+        line-height: 1.7;
+        color: #334155;
+        margin-bottom: 2rem;
+      }
+      .bold-accent {
+        font-weight: 700;
+        color: #0f172a;
+      }
+      .section-heading {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #f1f5f9;
+      }
+      .callout {
+        background: #fffbeb;
+        border-left: 4px solid #f59e0b;
+        padding: 1rem 1.25rem;
+        border-radius: 8px;
+        margin: 1.5rem 0;
+        font-size: 0.95rem;
+        line-height: 1.6;
+      }
+      .track-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.25rem;
+        margin-top: 1.5rem;
+      }
+      .track-card {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1.25rem;
+      }
+      .track-title {
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: #166534;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+      .track-desc {
+        font-size: 0.85rem;
+        color: #475569;
+        line-height: 1.5;
+      }
+
+      /* Job View Container */
+      .job-container {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Savanna LMS Host Navbar -->
+    <header class="host-header">
+      <div class="host-brand">
+        <div class="host-logo">S</div>
+        <div>
+          <div class="host-title">
+            <span>Savanna LMS Hub</span>
+            <span class="host-badge-online">• Online</span>
+          </div>
+          <div class="host-subtitle">Virtual Assistant Mastery Track</div>
+        </div>
+      </div>
+
+      <div class="host-controls">
+        <button id="toggle-view-btn" class="demo-switcher-btn" onclick="toggleView()">
+          Switch to Job Portal View 💼
+        </button>
+      </div>
+    </header>
+
+    <!-- 1. COURSE VIEW (Savanna concept-with-navigation) -->
+    <main id="course-view" class="page-container">
+      <div class="breadcrumbs">
+        <span>Savanna LMS</span>
+        <span>›</span>
+        <span>VA-1: VA Foundations &amp; Professional Identity</span>
+        <span>›</span>
+        <span style="color: #0f172a; font-weight: 600">The Future of the VA Industry</span>
+      </div>
+
+      <article class="content-card" id="curriculum_navigation_content">
+        <div class="page-header-row">
+          <div>
+            <h1 class="page-title">The Future of the VA Industry</h1>
+            <p style="color: #64748b; font-size: 0.9rem; margin-top: 0.25rem">
+              Module 2 — Virtual Assistant Mastery
+            </p>
+          </div>
+          <span class="est-read">Est. 12 mins read</span>
+        </div>
+
+        <p class="lead-text">
+          <mark style="background: #fef08a; padding: 2px 4px; border-radius: 4px">
+            The Virtual Assistant profession is not shrinking. It is evolving.
+          </mark>
+          As businesses become more digital, more global, and more comfortable with remote collaboration,
+          the need for skilled support professionals continues to grow. At the same time, new technologies
+          like Artificial Intelligence are changing <span class="bold-accent">how</span> support work gets
+          done and <span class="bold-accent">what clients will value most</span> in the years ahead.
+        </p>
+
+        <!-- Section 2 matching design -->
+        <h2 class="section-heading" id="section-2-an-important-distinction">
+          Section 2: An Important Distinction
+        </h2>
+        <div class="callout">
+          <strong>⚠️ An Important Distinction:</strong>
+          Virtual Assistant can mean two different things. In some reports, a “virtual assistant” refers to
+          <span class="bold-accent">AI software assistants</span> such as chatbots, voice assistants, and
+          digital agents. In other contexts, it refers to
+          <span class="bold-accent">human remote professionals</span> who provide business support online.
+          The future of the industry includes both, and increasingly, they will work together.
+        </div>
+
+        <p style="line-height: 1.6; color: #334155">
+          While General Virtual Assistants handle broad administrative, scheduling, and email triage workloads,
+          Specialized Virtual Assistants focus on domain niches such as Executive Operations, customer analytics,
+          and workflow automation.
+        </p>
+
+        <div class="track-grid">
+          <div class="track-card">
+            <div class="track-title">🌱 General Track</div>
+            <div class="track-desc">
+              Calendar curation, inbox management, client communication, and travel preparation.
+            </div>
+          </div>
+          <div class="track-card">
+            <div class="track-title">🚀 Specialized Track</div>
+            <div class="track-desc">
+              Executive automation, customer analytics, data operations, and CRM administration.
+            </div>
+          </div>
+        </div>
+      </article>
+    </main>
+
+    <!-- 2. JOB VIEW (Career Gateway) -->
+    <main id="job-view" class="page-container job-container">
+      <div class="breadcrumbs">
+        <span>ALX Career Gateway</span>
+        <span>›</span>
+        <span>Tech Opportunities</span>
+        <span>›</span>
+        <span style="color: #0f172a; font-weight: 600">Junior Python Developer</span>
+      </div>
+
+      <!-- Schema.org JobPosting structured data -->
+      <script type="application/ld+json">
+        {
+          "@context": "https://schema.org/",
+          "@type": "JobPosting",
+          "title": "Junior Python Developer",
+          "description": "Develop and maintain robust web applications, REST APIs, and backend services.",
+          "hiringOrganization": {
+            "@type": "Organization",
+            "name": "Safaricom Tech / Example Partner"
+          },
+          "skills": ["Python", "Django", "React", "REST APIs", "SQL"]
+        }
+      </script>
+
+      <article class="content-card job-detail">
+        <div class="page-header-row">
+          <div>
+            <h1 class="page-title">Junior Python Developer</h1>
+            <p style="color: #166534; font-weight: 600; margin-top: 0.25rem">
+              Safaricom Tech / Example Partner • Addis Ababa (Hybrid)
+            </p>
+          </div>
+          <span class="est-read" style="background: #e0e7ff; color: #3730a3">Full-time • Tech</span>
+        </div>
+
+        <p class="lead-text">
+          We are seeking an ambitious Junior Python Developer who is passionate about building accessible web
+          platforms and RESTful services. You will collaborate directly with engineering teams across Africa.
+        </p>
+
+        <h2 class="section-heading">Required Competencies</h2>
+        <ul style="line-height: 1.8; color: #334155">
+          <li><strong>Python &amp; Django:</strong> Writing clean, testable code and endpoints.</li>
+          <li><strong>Frontend Integration:</strong> Working with React and modern UI components.</li>
+          <li><strong>REST APIs:</strong> Designing secure authentication and structured JSON payloads.</li>
+          <li><strong>Bilingual Communication:</strong> Fluency in English and Amharic is an asset.</li>
+        </ul>
+
+        <div class="callout" style="background: #f0fdf4; border-left-color: #16a34a">
+          <strong>Inclusive Employer:</strong>
+          Interview accommodations are actively available upon request (Amharic translation, extended
+          assessment time, or accessible test formats).
+        </div>
+      </article>
+    </main>
+
+    <!-- View switcher script -->
+    <script>
+      function toggleView() {
+        const courseView = document.getElementById('course-view');
+        const jobView = document.getElementById('job-view');
+        const btn = document.getElementById('toggle-view-btn');
+
+        if (courseView.style.display === 'none') {
+          courseView.style.display = 'block';
+          jobView.style.display = 'none';
+          btn.innerText = 'Switch to Job Portal View 💼';
+          window.history.pushState({}, '', '/');
+        } else {
+          courseView.style.display = 'none';
+          jobView.style.display = 'block';
+          btn.innerText = 'Switch to Savanna Course View 🎓';
+          window.history.pushState({}, '', '/jobs/junior-python-developer');
+        }
+      }
+    </script>
+
+    <!-- Meri Embeddable Plugin Entrypoint -->
+    <script type="module" src="/src/main.tsx" data-public-key="savanna-dev-01" async></script>
+  </body>
+</html>

@@ -1,0 +1,6 @@
+node_modules
+dist/*
+!dist/meri.js
+dist-dev
+.DS_Store
+*.local
