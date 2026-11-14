@@ -151,6 +151,10 @@ export const Widget: React.FC<WidgetProps> = ({ publicKey }) => {
   const handleSendMessage = async (text: string) => {
     if (!text.trim() || isLoading) return;
 
+    // Immediately extract fresh DOM context so the active week/module is always accurate
+    const liveContext = extractPageContext();
+    setContext(liveContext);
+
     const userMsg: Message = {
       id: `user-${Date.now()}`,
       sender: 'user',
@@ -162,7 +166,7 @@ export const Widget: React.FC<WidgetProps> = ({ publicKey }) => {
     setIsLoading(true);
 
     try {
-      const response = await askMeriAI(text, context, language, simpleMode, publicKey);
+      const response = await askMeriAI(text, liveContext, language, simpleMode, publicKey);
 
       const assistantMsg: Message = {
         id: `assistant-${Date.now()}`,

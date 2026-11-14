@@ -88,33 +88,88 @@ export function extractPageContext(): PageContext {
     };
   }
 
-  // 4. Course Dashboards
+  // 4. Course Dashboards (e.g. homepage-v1-paced.html, homepage-v1-self-paced.html)
   if (pageType === 'course') {
-    const isPaced = url.includes('paced') && !url.includes('self-paced');
+    // 4.1 Detect Course Title dynamically
+    const courseTitleEl =
+      document.querySelector('#student-current-curriculum, .curriculum-title, [data-course-name], .fs-4.fw-semibold') ||
+      document.querySelector('header h1, .header-course-title');
+    const courseName =
+      courseTitleEl?.textContent?.replace(/\s+/g, ' ').trim() ||
+      document.title?.split('|')[0]?.trim() ||
+      'Active Course';
 
-    if (isPaced) {
-      return {
-        pageType: 'course',
-        url,
-        title: 'WR 100: Fundamentals of Effective Communication',
-        courseName: 'WR 100 (Week 10 of 15 • Cohort F26-SEM-16W)',
-        headings: ['Week 10 Strip', 'Immediate Deliverables', 'Period Progress: 59.56%', 'Upcoming Events'],
-        visibleContent:
-          'Learner: Björn Sibanda. Course: WR 100: Fundamentals of Effective Communication. Week 10 of 15. Overall score: 59.56% (slightly behind). Deliverables: Peer review discussion and written reflection due this week.',
-        estReadTime: 'Active Dashboard',
-      };
+    // 4.2 Detect Active Tab / Week / Module
+    const activeTab = document.querySelector(
+      '.homepage-nav .nav-link.active, .nav-link.active, [aria-current="page"], button[data-section-index].fw-semibold, button[data-section-index].active, .tab-pane.active, [role="tab"][aria-selected="true"]'
+    );
+    const activeTabLabel = activeTab?.textContent?.replace(/\s+/g, ' ').trim() || '';
+
+    // 4.3 Detect Learner Name if visible
+    let learnerName = '';
+    const bodyText = document.body.innerText || '';
+    const matchGreeting = bodyText.match(/([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s*👋/);
+    if (matchGreeting) {
+      learnerName = matchGreeting[1];
     } else {
-      return {
-        pageType: 'course',
-        url,
-        title: 'VA-1: VA Foundations & Professional Identity',
-        courseName: 'VA-1: VA Foundations (Module 1 of 3)',
-        headings: ['Course Progression: 16%', 'Module 1 Complete', 'Module 2: The Future of the VA Industry', 'Pacing Boost'],
-        visibleContent:
-          'Learner: Amara Nwosu. Course: VA-1: VA Foundations & Professional Identity. Progress: 1 of 3 modules complete (16% towards 70% threshold). Pacing boost: 11 days remaining.',
-        estReadTime: 'Active Dashboard',
-      };
+      const learnerEl = document.querySelector('.header-right, .user-name, [data-user-name], .greeting');
+      if (learnerEl) learnerName = learnerEl.textContent?.trim() || '';
     }
+
+    // 4.4 Find Active Content Host Container (e.g. #static-track-host for current week)
+    const activeContentHost =
+      document.getElementById('static-track-host') ||
+      document.querySelector('[data-section-host]') ||
+      document.getElementById('curriculum_navigation_content') ||
+      document.querySelector('.tab-content, main, article, .content-container') ||
+      document.body;
+
+    const headings = Array.from(
+      activeContentHost.querySelectorAll('h1, h2, h3, h4, h5, .card-header, strong.title')
+    )
+      .map((h) => h.textContent?.replace(/\s+/g, ' ').trim() || '')
+      .filter((h) => h.length > 2 && h.length < 100);
+
+    // Extract clean content from the active host
+    let hostCleanText = cleanAndSanitizeContent(activeContentHost);
+
+    // Also include any active cards on the dashboard (e.g. deliverables, upcoming deadlines)
+    const cards = Array.from(document.querySelectorAll('.card, .homepage-card'))
+      .map((c) => cleanAndSanitizeContent(c))
+      .filter((t) => t.length > 20 && !hostCleanText.includes(t.slice(0, 40)))
+      .slice(0, 4)
+      .join('\n');
+
+    if (cards) {
+      hostCleanText = `${hostCleanText}\n\nDashboard Cards & Immediate Deliverables:\n${cards}`;
+    }
+
+    // Limit to 4000 characters for token efficiency
+    const sanitizedText = hostCleanText.slice(0, 4000);
+
+    const displayTitle = activeTabLabel
+      ? `${courseName} - ${activeTabLabel}`
+      : courseName;
+
+    const visibleContent = `Active Course: ${courseName}
+Active Section/Week: ${activeTabLabel || 'Overview'}
+${learnerName ? `Learner: ${learnerName}` : ''}
+Page URL: ${url}
+Active Headings for this section: ${headings.slice(0, 8).join(' | ')}
+
+--- CURRENT ACTIVE PAGE & WEEK CONTENT ---
+${sanitizedText}
+--- END ACTIVE PAGE CONTENT ---`;
+
+    return {
+      pageType: 'course',
+      url,
+      title: displayTitle,
+      courseName: activeTabLabel ? `${courseName} (${activeTabLabel})` : courseName,
+      headings: headings.length > 0 ? headings.slice(0, 10) : ['Course Dashboard', activeTabLabel || 'Overview'],
+      visibleContent,
+      estReadTime: activeTabLabel || 'Active Dashboard',
+    };
   }
 
   // 5. Job Page / Job Portal (Career Gateway)
@@ -157,13 +212,23 @@ export function extractPageContext(): PageContext {
   }
 
   // 6. General Fallback
-  const mainContent = document.querySelector('main') || document.body;
+  const mainContent =
+    document.querySelector('main, article, .content-container, #content, .container') ||
+    document.body;
+  const headings = Array.from(mainContent.querySelectorAll('h1, h2, h3, h4'))
+    .map((h) => h.textContent?.replace(/\s+/g, ' ').trim() || '')
+    .filter(Boolean);
+  const cleanText = cleanAndSanitizeContent(mainContent).slice(0, 4000);
+
   return {
     pageType: 'general',
     url,
     title: document.title || 'Platform Overview',
-    headings: Array.from(mainContent.querySelectorAll('h1, h2, h3')).map((h) => h.textContent?.trim() || ''),
-    visibleContent: cleanAndSanitizeContent(mainContent).slice(0, 3000),
+    headings: headings.length > 0 ? headings.slice(0, 8) : ['Page Overview'],
+    visibleContent: `Page Title: ${document.title} (${url})
+Page Headings: ${headings.slice(0, 8).join(' | ')}
+Page Content:
+${cleanText}`,
     estReadTime: 'General Page',
   };
 }
@@ -188,18 +253,22 @@ function cleanAndSanitizeContent(root: Element): string {
 }
 
 /**
- * Initializes continuous SPA URL change detection and debounced DOM observation.
+ * Initializes continuous SPA URL change detection, tab/week click tracking, and debounced DOM observation.
  */
 export function initSpaContextTracking(onContextChange: (ctx: PageContext) => void) {
   if (typeof window === 'undefined') return;
 
   let lastUrl = window.location.href;
+  let lastContextSummary = '';
 
-  const checkUrlChange = () => {
+  const checkContextChange = (force = false) => {
     const currentUrl = window.location.href;
-    if (currentUrl !== lastUrl) {
+    const ctx = extractPageContext();
+    const summary = `${ctx.pageType}|${ctx.title}|${ctx.visibleContent.slice(0, 150)}`;
+
+    if (force || currentUrl !== lastUrl || summary !== lastContextSummary) {
       lastUrl = currentUrl;
-      const ctx = extractPageContext();
+      lastContextSummary = summary;
       onContextChange(ctx);
     }
   };
@@ -208,22 +277,39 @@ export function initSpaContextTracking(onContextChange: (ctx: PageContext) => vo
   const origPushState = window.history.pushState;
   window.history.pushState = function (...args) {
     const res = origPushState.apply(this, args);
-    setTimeout(checkUrlChange, 50);
+    setTimeout(() => checkContextChange(true), 50);
     return res;
   };
 
   const origReplaceState = window.history.replaceState;
   window.history.replaceState = function (...args) {
     const res = origReplaceState.apply(this, args);
-    setTimeout(checkUrlChange, 50);
+    setTimeout(() => checkContextChange(true), 50);
     return res;
   };
 
-  window.addEventListener('popstate', checkUrlChange);
-  window.addEventListener('hashchange', checkUrlChange);
+  window.addEventListener('popstate', () => checkContextChange(true));
+  window.addEventListener('hashchange', () => checkContextChange(true));
+
+  // Listen to tab / week / module / accordion clicks in the host document
+  document.addEventListener(
+    'click',
+    (e) => {
+      const target = e.target as HTMLElement | null;
+      const isTabOrNav = target?.closest(
+        'a.nav-link, button[data-section-index], [data-track-id], .tab, [role="tab"], .scroll-region__item, .dropdown-item, .accordion-button'
+      );
+      if (isTabOrNav) {
+        // Wait for host script to replace panel DOM
+        setTimeout(() => checkContextChange(true), 100);
+        setTimeout(() => checkContextChange(true), 350);
+      }
+    },
+    { passive: true }
+  );
+
   window.addEventListener('meri-context-changed', () => {
-    const ctx = extractPageContext();
-    onContextChange(ctx);
+    checkContextChange(true);
   });
 
   // Debounced MutationObserver for dynamic single page apps
@@ -231,8 +317,8 @@ export function initSpaContextTracking(onContextChange: (ctx: PageContext) => vo
   const observer = new MutationObserver(() => {
     if (debounceTimer) clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
-      checkUrlChange();
-    }, 350);
+      checkContextChange(false);
+    }, 250);
   });
 
   observer.observe(document.body, { childList: true, subtree: true });
