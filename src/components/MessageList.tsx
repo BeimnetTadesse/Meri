@@ -6,7 +6,7 @@ import { highlightHostSection } from '../context/context-extractor';
 interface MessageListProps {
   messages: Message[];
   language: Language;
-  onSpeak: (text: string) => void;
+  onSpeak: (text: string, messageId: string) => void;
   onStopSpeak: () => void;
   currentlySpeakingId: string | null;
 }
@@ -97,7 +97,7 @@ export const MessageList: React.FC<MessageListProps> = ({
 
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => (isSpeaking ? onStopSpeak() : onSpeak(msg.text))}
+                    onClick={() => (isSpeaking ? onStopSpeak() : onSpeak(msg.text, msg.id))}
                     className="hover:text-emerald-700 flex items-center gap-1 transition-colors"
                     title={isSpeaking ? 'Stop speaking' : 'Read aloud'}
                   >

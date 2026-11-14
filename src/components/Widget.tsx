@@ -217,10 +217,12 @@ export const Widget: React.FC<WidgetProps> = ({ publicKey }) => {
     }
   };
 
-  // Voice Text-To-Speech
-  const handleSpeak = (text: string) => {
+  // Voice Text-To-Speech — accepts message id so per-message stop button works
+  const handleSpeak = (text: string, messageId?: string) => {
+    SpeechService.stopSpeaking(); // Cancel any in-progress speech first
+    const speakingId = messageId ?? 'manual';
     setIsSpeaking(true);
-    setCurrentlySpeakingId('manual');
+    setCurrentlySpeakingId(speakingId);
     SpeechService.speak(text, language, voiceRate, () => {
       setIsSpeaking(false);
       setCurrentlySpeakingId(null);

@@ -1,25 +1,41 @@
 import { Language } from '../types';
 
-// Web Speech API Types
+// ─── Web Speech API shim types ─────────────────────────────────────────────
+
+interface SpeechRecognitionResult {
+  readonly isFinal: boolean;
+  readonly length: number;
+  item(index: number): SpeechRecognitionAlternative;
+  [index: number]: SpeechRecognitionAlternative;
+}
+
+interface SpeechRecognitionAlternative {
+  readonly transcript: string;
+  readonly confidence: number;
+}
+
+interface SpeechRecognitionResultList {
+  readonly length: number;
+  item(index: number): SpeechRecognitionResult;
+  [index: number]: SpeechRecognitionResult;
+}
+
 interface SpeechRecognitionEvent extends Event {
-  results: {
-    [index: number]: {
-      [index: number]: {
-        transcript: string;
-      };
-    };
-  };
+  readonly resultIndex: number;
+  readonly results: SpeechRecognitionResultList;
 }
 
 interface SpeechRecognitionInstance extends EventTarget {
   lang: string;
   continuous: boolean;
   interimResults: boolean;
-  start: () => void;
-  stop: () => void;
-  onresult: (event: SpeechRecognitionEvent) => void;
-  onerror: (event: Event) => void;
-  onend: () => void;
+  maxAlternatives: number;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onerror: ((event: Event) => void) | null;
+  onend: (() => void) | null;
+  start(): void;
+  stop(): void;
+  abort(): void;
 }
 
 declare global {
@@ -29,9 +45,17 @@ declare global {
   }
 }
 
+// ─── SpeechService ──────────────────────────────────────────────────────────
+
 export class SpeechService {
   private static recognition: SpeechRecognitionInstance | null = null;
   private static isSpeaking = false;
+
+  // Active utterance ref — needed to work around Chrome's cancel() bug
+  private static activeUtterance: SpeechSynthesisUtterance | null = null;
+  private static activeOnEnd: (() => void) | null = null;
+
+  // ── Speech-to-Text ────────────────────────────────────────────────────────
 
   static startListening(
     language: Language,
@@ -40,46 +64,98 @@ export class SpeechService {
   ): boolean {
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRec) {
-      console.warn('[Meri] Speech recognition not supported in this browser.');
+      console.warn('[Meri] SpeechRecognition not supported in this browser.');
       return false;
     }
 
-    try {
-      this.recognition = new SpeechRec();
-      this.recognition.lang = language === 'am' ? 'am-ET' : 'en-US';
-      this.recognition.continuous = false;
-      this.recognition.interimResults = false;
+    // Abort any active session cleanly before starting a new one
+    this._abortListening();
 
-      this.recognition.onresult = (event: SpeechRecognitionEvent) => {
-        const transcript = event.results[0][0].transcript;
-        if (transcript) {
-          onResult(transcript);
+    try {
+      const rec = new SpeechRec();
+      this.recognition = rec;
+
+      rec.lang = language === 'am' ? 'am-ET' : 'en-US';
+      rec.continuous = false;      // stop after one utterance
+      rec.interimResults = true;   // get interim so we can collect the best transcript
+      rec.maxAlternatives = 1;
+
+      // We collect the best transcript seen so far.
+      // The browser keeps calling onresult with longer and longer transcripts
+      // as it hears more words. We store the latest one and send it at the end.
+      let bestTranscript = '';
+      let resultSent = false;
+
+      rec.onresult = (event: SpeechRecognitionEvent) => {
+        // Always take the last result's first alternative — it is the most
+        // complete transcript the browser has built so far this session.
+        const lastResult = event.results[event.results.length - 1];
+        const candidate = lastResult[0].transcript.trim();
+        if (candidate) {
+          bestTranscript = candidate;
+        }
+
+        // If the browser marks this segment as final we can send immediately
+        // and prevent onend from sending again.
+        if (lastResult.isFinal && bestTranscript && !resultSent) {
+          resultSent = true;
+          onResult(bestTranscript);
         }
       };
 
-      this.recognition.onerror = () => {
-        onEnd();
+      rec.onerror = (event: Event) => {
+        const errorType = (event as ErrorEvent).type;
+        console.warn('[Meri] STT error:', errorType);
+        // Don't call onEnd here — onend always fires after onerror too,
+        // so we handle everything in onend to avoid double-calling.
       };
 
-      this.recognition.onend = () => {
-        onEnd();
+      rec.onend = () => {
+        this.recognition = null;
+        if (!resultSent) {
+          // Browser ended without a final result — send whatever we collected
+          // (interim transcript), or just call onEnd to reset the mic button.
+          if (bestTranscript) {
+            resultSent = true;
+            onResult(bestTranscript);
+          } else {
+            onEnd();
+          }
+        } else {
+          // Result was already sent — just reset listening state
+          onEnd();
+        }
       };
 
-      this.recognition.start();
+      rec.start();
       return true;
     } catch (err) {
-      console.warn('[Meri] Error starting speech recognition:', err);
+      console.warn('[Meri] Error starting STT:', err);
+      this.recognition = null;
       onEnd();
       return false;
     }
   }
 
-  static stopListening() {
+  static stopListening(): void {
+    this._abortListening();
+  }
+
+  private static _abortListening(): void {
     if (this.recognition) {
-      this.recognition.stop();
+      try {
+        this.recognition.onresult = null;
+        this.recognition.onerror = null;
+        this.recognition.onend = null;
+        this.recognition.abort();
+      } catch {
+        // ignore — recognition may already be stopped
+      }
       this.recognition = null;
     }
   }
+
+  // ── Text-to-Speech ────────────────────────────────────────────────────────
 
   static speak(
     text: string,
@@ -87,35 +163,57 @@ export class SpeechService {
     rate = 1.0,
     onEnd?: () => void
   ): boolean {
-    if (!('speechSynthesis' in window)) {
-      return false;
-    }
+    if (!('speechSynthesis' in window)) return false;
 
-    window.speechSynthesis.cancel();
+    // Cancel any in-progress speech and manually fire its onEnd so the UI
+    // resets before we start the new utterance. Chrome's cancel() does NOT
+    // reliably fire utterance.onend, so we do it ourselves.
+    this._cancelSpeechAndNotify();
 
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = language === 'am' ? 'am-ET' : 'en-US';
     utterance.rate = rate;
 
-    utterance.onend = () => {
-      this.isSpeaking = false;
+    const handleEnd = () => {
+      if (this.activeUtterance === utterance) {
+        this.activeUtterance = null;
+        this.activeOnEnd = null;
+        this.isSpeaking = false;
+      }
       if (onEnd) onEnd();
     };
 
-    utterance.onerror = () => {
-      this.isSpeaking = false;
-      if (onEnd) onEnd();
-    };
+    utterance.onend = handleEnd;
+    utterance.onerror = handleEnd;
 
+    this.activeUtterance = utterance;
+    this.activeOnEnd = onEnd ?? null;
     this.isSpeaking = true;
+
     window.speechSynthesis.speak(utterance);
     return true;
   }
 
-  static stopSpeaking() {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      this.isSpeaking = false;
+  static stopSpeaking(): void {
+    this._cancelSpeechAndNotify();
+  }
+
+  private static _cancelSpeechAndNotify(): void {
+    if (!('speechSynthesis' in window)) return;
+
+    // If there's a pending onEnd callback, call it now — Chrome's cancel()
+    // won't fire utterance.onend, so the React state would stay stuck on
+    // "Speaking..." without this.
+    const pendingOnEnd = this.activeOnEnd;
+    this.activeUtterance = null;
+    this.activeOnEnd = null;
+    this.isSpeaking = false;
+
+    window.speechSynthesis.cancel();
+
+    if (pendingOnEnd) {
+      // Small delay so React batch update doesn't collide with cancel()
+      setTimeout(pendingOnEnd, 50);
     }
   }
 
