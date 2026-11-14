@@ -1,4 +1,5 @@
 import { Citation, Language, PageContext } from '../types';
+import { getApiBaseUrl } from '../core/configuration';
 
 export interface AIResponse {
   answer: string;
@@ -13,26 +14,39 @@ export async function askMeriAI(
   simpleMode: boolean,
   mode: 'course_tutor' | 'career_coach'
 ): Promise<AIResponse> {
-  // 1. Try Cloud / Backend API if configured
+  // 1. Try Cloud / Backend API if available
   try {
-    const res = await fetch('/api/v1/chat', {
+    const apiBase = getApiBaseUrl();
+    const res = await fetch(`${apiBase}/api/v1/chat/messages`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        question,
-        pageContext: context,
+        message: question,
+        context: {
+          page_type: context.pageType,
+          url: context.url,
+          title: context.title,
+          content: context.visibleContent,
+        },
         language,
-        simpleMode,
-        mode,
+        simple_mode: simpleMode,
       }),
     });
 
     if (res.ok) {
       const data = await res.json();
+      const mappedCitations: Citation[] = (data.citations || []).map((c: { title?: string; source_type?: string; snippet?: string; relevance_score?: number }, idx: number) => ({
+        id: `cite-srv-${idx}-${Date.now()}`,
+        title: c.title || 'Course Material',
+        section: c.source_type || 'Lesson Reference',
+        snippet: c.snippet || '',
+        pageNumber: c.relevance_score ? `${Math.round(c.relevance_score * 100)}% Match` : undefined,
+      }));
+
       return {
-        answer: data.answer,
-        citations: data.citations || [],
-        source: 'cloud',
+        answer: data.response || data.answer || '',
+        citations: mappedCitations,
+        source: data.provider_used === 'gemini' || data.provider_used === 'groq' ? 'cloud' : 'offline_faq',
       };
     }
   } catch {
