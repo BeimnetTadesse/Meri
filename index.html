@@ -3,9 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Savanna static pages &amp; Career Gateway Hub</title>
-    <link rel="stylesheet" href="assets/css/application_alx.css" media="all" />
-    <link rel="stylesheet" href="assets/css/app.css" media="all" />
+    <title>Meri (መሪ) Assistant Plugin — Dev Sandbox</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -13,161 +11,209 @@
       rel="stylesheet"
     />
     <style>
-      body {
-        padding: 3rem 1.5rem 6rem 1.5rem;
-        background-color: #f8fafc;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      :root {
+        --bg-color: #f8fafc;
+        --card-bg: #ffffff;
+        --text-main: #0f172a;
+        --text-muted: #64748b;
+        --border-color: #e2e8f0;
+        --primary: #16a34a;
       }
-      .hub-container {
-        max-width: 52rem;
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        background-color: var(--bg-color);
+        color: var(--text-main);
+        padding: 2.5rem 1.5rem 6rem 1.5rem;
+        line-height: 1.6;
+      }
+      .sandbox-container {
+        max-width: 54rem;
         margin: 0 auto;
       }
-      .page-card-item {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 16px;
-        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-        text-decoration: none;
-        color: inherit;
-        display: block;
-        padding: 1.75rem 2rem;
-        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
-        position: relative;
-        overflow: hidden;
-      }
-      .page-card-item:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
-        border-color: #cbd5e1;
-      }
-      .card-link-title {
-        color: #e11d48;
-        font-size: 1.15rem;
-        font-weight: 700;
-        margin-bottom: 0.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-      }
-      .card-career-title {
-        color: #16a34a !important;
-      }
-      .page-card-career {
-        border-color: #bbf7d0;
-        background: linear-gradient(to right, #ffffff, #f0fdf4);
-      }
-      .page-card-career:hover {
-        border-color: #86efac;
-      }
-      .mode-badge {
-        font-size: 0.7rem;
-        font-weight: 700;
-        padding: 4px 10px;
-        border-radius: 9999px;
-        text-transform: uppercase;
-        letter-spacing: 0.03em;
-      }
-      .badge-tutor {
-        background: #ffe4e6;
-        color: #9f1239;
-        border: 1px solid #fecdd3;
-      }
-      .badge-career {
+      .header-badge {
+        display: inline-block;
         background: #dcfce7;
         color: #15803d;
-        border: 1px solid #bbf7d0;
+        font-size: 0.8rem;
+        font-weight: 700;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        margin-bottom: 0.75rem;
       }
-      .lead-description {
-        font-size: 0.925rem;
-        color: #64748b;
-        line-height: 1.6;
+      h1 {
+        font-size: 2rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 0.5rem;
+      }
+      .subtitle {
+        color: var(--text-muted);
+        font-size: 1.05rem;
         margin-bottom: 2rem;
       }
+      .card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 1rem;
+        padding: 1.75rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+      }
+      .card-title {
+        font-size: 1.15rem;
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .code-box {
+        background: #0f172a;
+        color: #38bdf8;
+        padding: 1rem 1.25rem;
+        border-radius: 0.75rem;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 0.875rem;
+        overflow-x: auto;
+        margin-top: 0.75rem;
+      }
+      .code-box span { color: #f1f5f9; }
+      .pill {
+        display: inline-block;
+        background: #f1f5f9;
+        color: #475569;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.2rem 0.5rem;
+        border-radius: 0.375rem;
+        margin-right: 0.25rem;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: var(--primary);
+        color: #ffffff;
+        font-weight: 600;
+        font-size: 0.9rem;
+        padding: 0.6rem 1.25rem;
+        border-radius: 0.5rem;
+        border: none;
+        cursor: pointer;
+        text-decoration: none;
+      }
+      .btn:hover { background: #15803d; }
+      .demo-section {
+        background: #f0fdf4;
+        border: 1px dashed #86efac;
+        border-radius: 0.75rem;
+        padding: 1.25rem;
+        margin-top: 1rem;
+      }
     </style>
+
+    <!-- Schema.org JobPosting structured data for testing Career Coach mode -->
+    <script id="job-schema-json" type="application/ld+json">
+      {
+        "@context": "https://schema.org/",
+        "@type": "JobPosting",
+        "title": "Junior Python Developer",
+        "description": "Build high-performance REST APIs and database models using Python, FastAPI, and PostgreSQL.",
+        "hiringOrganization": {
+          "@type": "Organization",
+          "name": "Tech Innovators Africa"
+        },
+        "skills": ["Python", "FastAPI", "PostgreSQL", "Docker", "Git"]
+      }
+    </script>
   </head>
   <body>
-    <main class="hub-container">
-      <!-- Header Banner -->
-      <div class="d-flex align-items-center justify-content-between mb-3">
-        <div class="d-flex align-items-center gap-2">
-          <span class="badge bg-emerald-100 text-emerald-800 px-3 py-1.5 rounded-pill font-bold" style="background: #dcfce7; color: #166534; font-size: 0.75rem;">
-            ✨ Meri (መሪ) Assistant Active
-          </span>
-          <span class="text-body-secondary small">• Multilingual AI &amp; Career Companion</span>
+    <div class="sandbox-container">
+      <span class="header-badge">🔌 Standalone Plugin UI Sandbox</span>
+      <h1>Meri (መሪ) Assistant Plugin</h1>
+      <p class="subtitle">
+        Isolated development testbench for the embeddable multilingual AI learning companion and career gateway widget.
+        Any host platform (LMS, university portal, or job board) integrates Meri with a single script tag.
+      </p>
+
+      <!-- Section 1: Integration Snippet -->
+      <div class="card">
+        <h2 class="card-title">📦 How to Embed on Any Website</h2>
+        <p style="color: var(--text-muted); font-size: 0.95rem;">
+          Add this script tag right before the closing <code>&lt;/body&gt;</code> tag on any website:
+        </p>
+        <div class="code-box">
+&lt;!-- Meri (መሪ) Multilingual AI Assistant Plugin --&gt;<br />
+&lt;script 
+  <span>src="https://your-domain.com/dist/meri.js"</span> 
+  <span>data-public-key="pk_live_savanna_sample_12345"</span> 
+  <span>async</span>
+&gt;&lt;/script&gt;
         </div>
       </div>
 
-      <h1 class="h2 fw-bold text-dark mb-2">Savanna static pages</h1>
-      <p class="lead-description">
-        Three learner pages frozen from the local dev app, plus our integrated Career Gateway job portal.
-        The Meri assistant is embedded on every page, adapting its intelligence between <strong>Course Tutor</strong>
-        and <strong>Career Coach</strong> depending on where you navigate.
-      </p>
+      <!-- Section 2: Active Lesson DOM Sandbox -->
+      <div class="card">
+        <h2 class="card-title">📖 Simulated Course Lesson Sandbox</h2>
+        <p style="color: var(--text-muted); font-size: 0.95rem;">
+          Meri automatically inspects <code>#curriculum_navigation_content</code> to extract lesson context and ground answers with exact citations.
+        </p>
 
-      <!-- 4 Target Cards -->
-      <div class="vstack gap-3">
-        <!-- 1. Paced Homepage -->
-        <a href="pages/homepage-v1-paced.html" class="page-card-item">
-          <div class="card-link-title">
-            <span>Learner homepage — v1 paced</span>
-            <span class="mode-badge badge-tutor">🎓 Course Tutor Mode</span>
-          </div>
-          <p class="text-body-secondary mb-0" style="font-size: 0.9rem; line-height: 1.55;">
-            Björn Sibanda, week 10 of <strong>WR 100: Fundamentals of Effective Communication</strong>
-            (cohort F26-SEM-16W, 31 Aug – 20 Dec 2026). Courses dropdown, a week strip with all 16 weeks
-            preloaded, “continue where you left off”, immediate deliverables, period progress, overall score and upcoming events.
+        <!-- Simulated Lesson Container -->
+        <article id="curriculum_navigation_content" class="demo-section">
+          <h3 style="font-size: 1.2rem; font-weight: 700; color: #166534; margin-bottom: 0.5rem;">
+            Lesson: Introduction to Python Programming
+          </h3>
+          <p style="margin-bottom: 0.75rem;">
+            <strong>Section 1: What is Python?</strong> Python is a high-level, interpreted programming language known for its clear syntax and versatility. It powers data science, machine learning, and web backend development.
           </p>
-        </a>
-
-        <!-- 2. Self-Paced Homepage -->
-        <a href="pages/homepage-v1-self-paced.html" class="page-card-item">
-          <div class="card-link-title">
-            <span>Learner homepage — v1 self-paced</span>
-            <span class="mode-badge badge-tutor">🎓 Course Tutor Mode</span>
-          </div>
-          <p class="text-body-secondary mb-0" style="font-size: 0.9rem; line-height: 1.55;">
-            Amara Nwosu, module 1 of 3 complete on <strong>VA-1: VA Foundations &amp; Professional Identity</strong>.
-            Course-progression gauge against the 70% graduation threshold, a working module switcher, the programme modal
-            preloaded, pacing boost and upcoming events.
+          <p>
+            <strong>Section 2: Variables and Data Types:</strong> Variables store data in memory. Basic types include integers, floats, strings, and booleans. Python uses dynamic typing, meaning you do not need to declare types explicitly.
           </p>
-        </a>
-
-        <!-- 3. Concept Page with Navigation -->
-        <a href="pages/concept-with-navigation.html" class="page-card-item">
-          <div class="card-link-title">
-            <span>Concept page with curriculum navigation</span>
-            <span class="mode-badge badge-tutor">🎓 Course Tutor Mode</span>
-          </div>
-          <p class="text-body-secondary mb-0" style="font-size: 0.9rem; line-height: 1.55;">
-            “The Future of the VA Industry” — a module 2 concept with the navigation panel beside it, showing read,
-            current and unread activities, plus the full set of authored content blocks (callouts, card grids, comparison columns).
-            Meri reads this lesson directly, offering Amharic explanations and citations.
-          </p>
-        </a>
-
-        <!-- 4. Career Gateway: Tech Job Opportunities -->
-        <a href="pages/job-portal.html" class="page-card-item page-card-career">
-          <div class="card-link-title card-career-title">
-            <span>Career Gateway — Tech Job Opportunities</span>
-            <span class="mode-badge badge-career">💼 Career Coach Mode</span>
-          </div>
-          <p class="text-body-secondary mb-0" style="font-size: 0.9rem; line-height: 1.55;">
-            Curated employment opportunities for ALX graduates (Python, React, Virtual Operations, Flutter).
-            Demonstrates Meri in <strong>Career Coach mode</strong> with multi-role job board, schema.org job metadata,
-            skill match analysis, interview preparation, and the interview accommodations request modal.
-          </p>
-        </a>
+        </article>
       </div>
 
-      <!-- Footer Info -->
-      <div class="mt-4 pt-3 border-top d-flex justify-content-between align-items-center text-body-secondary small">
-        <span>Click any card to open that page with the live Meri (መሪ) assistant embedded.</span>
-        <span>Track 3: Multilingual Assistant &amp; Live Help</span>
+      <!-- Section 3: Career Gateway DOM Sandbox -->
+      <div class="card">
+        <h2 class="card-title">💼 Simulated Career Opportunity Sandbox</h2>
+        <p style="color: var(--text-muted); font-size: 0.95rem;">
+          When on pages with <code>JobPosting</code> structured metadata, Meri automatically switches to Career Coach mode, analyzing required skills and enabling interview accommodation requests.
+        </p>
+        <div class="demo-section" style="background: #eff6ff; border-color: #93c5fd;">
+          <h3 style="font-size: 1.15rem; font-weight: 700; color: #1e40af; margin-bottom: 0.25rem;">
+            Junior Python Developer — Tech Innovators Africa
+          </h3>
+          <p style="color: #475569; font-size: 0.9rem; margin-bottom: 0.5rem;">
+            Addis Ababa / Remote • Full-time
+          </p>
+          <div>
+            <span class="pill">Python</span>
+            <span class="pill">FastAPI</span>
+            <span class="pill">PostgreSQL</span>
+            <span class="pill">Docker</span>
+            <span class="pill">Git</span>
+          </div>
+        </div>
       </div>
-    </main>
 
-    <!-- Meri (መሪ) Multilingual AI Assistant Plugin -->
+      <!-- Section 4: Testing Actions -->
+      <div class="card" style="background: #fafafa;">
+        <h2 class="card-title">🧪 Try Meri Features Right Now</h2>
+        <p style="color: var(--text-muted); font-size: 0.92rem; margin-bottom: 1rem;">
+          Look at the bottom right corner of this screen: the floating <strong>Meri (መሪ) Launcher</strong> is active!
+        </p>
+        <ul style="padding-left: 1.25rem; font-size: 0.92rem; color: #334155; display: flex; flex-direction: column; gap: 0.4rem;">
+          <li>Click the launcher to open the floating chat widget.</li>
+          <li>Ask questions about Python: Meri will cite Section 1 or 2 from the lesson above.</li>
+          <li>Toggle language between <strong>English</strong> and <strong>Amharic (አማርኛ)</strong>.</li>
+          <li>Toggle <strong>Simple Mode (ቀላል ሁነታ)</strong> for beginner-friendly analogies.</li>
+          <li>Test Voice speech-to-text recording or read-aloud TTS.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Live Meri Plugin entrypoint for Vite development -->
     <script type="module" src="/src/main.tsx"></script>
-    <script src="dist/meri.js" data-public-key="savanna-dev-01" async></script>
   </body>
 </html>
