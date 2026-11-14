@@ -1,8 +1,6 @@
-export type PageType = 'lesson' | 'course' | 'assignment' | 'job' | 'general';
+export type PageType = 'lesson' | 'course' | 'assignment' | 'job' | 'application' | 'general';
 
 export type Language = 'en' | 'am';
-
-export type AssistantMode = 'course_tutor' | 'career_coach';
 
 export interface Citation {
   id: string;

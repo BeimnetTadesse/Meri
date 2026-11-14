@@ -2,15 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Launcher } from './Launcher';
 import { Header } from './Header';
 import { ContextBar } from './ContextBar';
-import { ModeSwitcher } from './ModeSwitcher';
 import { StatusRibbon } from './StatusRibbon';
 import { MessageList } from './MessageList';
 import { QuickActions } from './QuickActions';
 import { MessageInput } from './MessageInput';
 import { HumanHelpModal } from './HumanHelpModal';
 import { AccommodationsModal } from './AccommodationsModal';
-import { Language, AssistantMode, Message, PageContext } from '../types';
-import { extractPageContext } from '../context/context-extractor';
+import { Language, Message, PageContext } from '../types';
+import { extractPageContext, initSpaContextTracking } from '../context/context-extractor';
 import { askMeriAI } from '../services/ai-service';
 import { SpeechService } from '../services/speech';
 
@@ -19,11 +18,10 @@ interface WidgetProps {
   shadowRoot?: ShadowRoot;
 }
 
-export const Widget: React.FC<WidgetProps> = () => {
+export const Widget: React.FC<WidgetProps> = ({ publicKey }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [language, setLanguage] = useState<Language>('en');
   const [simpleMode, setSimpleMode] = useState(false);
-  const [mode, setMode] = useState<AssistantMode>('course_tutor');
   const [voiceRate, setVoiceRate] = useState(1.0);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [currentlySpeakingId, setCurrentlySpeakingId] = useState<string | null>(null);
@@ -42,27 +40,42 @@ export const Widget: React.FC<WidgetProps> = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const generateGreeting = (ctx: PageContext, lang: Language): string => {
-    if (ctx.pageType === 'job') {
-      return lang === 'am'
-        ? `ሰላም! እኔ መሪ (Meri)፣ የእርስዎ የስራ አሰልጣኝ ነኝ። የ"${ctx.jobTitle || 'ቴክኖሎጂ'}" የስራ እድልን ከእርስዎ ጋር እያየሁ ነው። ለቃለ-መጠይቅ ለመዘጋጀት ወይም ብቃትዎትን ለማወቅ እንዴት ልርዳዎት?`
-        : `ሰላም! I'm Meri (መሪ), your Career Coach for this ${ctx.jobTitle || 'Tech Opportunity'} role. I can check your qualification match, run mock interviews, or help request accommodations. How can I guide you today?`;
-    }
+    switch (ctx.pageType) {
+      case 'job':
+        return lang === 'am'
+          ? `ሰላም! እኔ መሪ (Meri)፣ የእርስዎ የስራ አሰልጣኝ ነኝ። የ"${ctx.jobTitle || 'ቴክኖሎጂ'}" የስራ እድልን ከእርስዎ ጋር እያየሁ ነው። ለቃለ-መጠይቅ ለመዘጋጀት፣ የክህሎት ብቃትዎን ለማወቅ ወይም የድጋፍ ጥያቄ ለማቅረብ እንዴት ልርዳዎት?`
+          : `ሰላም! I'm Meri (መሪ), your Career Coach for this ${ctx.jobTitle || 'Tech Opportunity'} role. I can check your qualification match, run mock interviews, or help request accommodations. How can I guide you today?`;
 
-    if (ctx.url.includes('paced') && !ctx.url.includes('self-paced')) {
-      return lang === 'am'
-        ? `ሰላም Björn! በWR 100: Fundamentals of Effective Communication (ሳምንት 10) ላይ ነዎት። የሳምንቱ የውይይትና የጽሁፍ ስራዎች እንዴት እየሄዱ ነው?`
-        : `ሰላም Björn! I see you are on WR 100: Fundamentals of Effective Communication (Week 10 of 15). How can I assist with your immediate deliverables or score progress today?`;
-    }
+      case 'assignment':
+        return lang === 'am'
+          ? `ሰላም! የዚህን ምደባ/ፕሮጀክት "${ctx.title}" መመሪያዎች እና መስፈርቶች እያየሁ ነው። ስራውን ለመረዳት ወይም የተፈለገውን ውጤት ለማምጣት ምን ላብራራልዎት?`
+          : `ሰላም! I'm inspecting your assignment "${ctx.title}". I can explain instructions, break down key rubric requirements, or help plan your deliverables. What would you like to review?`;
 
-    if (ctx.url.includes('self-paced')) {
-      return lang === 'am'
-        ? `ሰላም Amara! በVA-1: VA Foundations (ሞጁል 1) ላይ ነዎት፤ 16% አጠናቀዋል። ሞጁል 2ን ለመጀመር ዝግጁ ነዎት? ምን ላብራራልዎት?`
-        : `ሰላም Amara! You are on VA-1: VA Foundations & Professional Identity (16% complete). Ready to conquer Module 2? How can I guide your learning today?`;
-    }
+      case 'application':
+        return lang === 'am'
+          ? `ሰላም! በማመልከቻ ሂደት ላይ ነዎት። የሽፋን ደብዳቤ (Cover Letter) ለማዘጋጀት ወይም መስፈርቶቹን ለማረጋገጥ እንዴት ልርዳዎት እችላለሁ?`
+          : `ሰላም! You're on an application page. I can assist with cover letter suggestions, check your qualifications, and verify your submission checklist. How can I assist?`;
 
-    return lang === 'am'
-      ? `ሰላም! እኔ መሪ (Meri)፣ የትምህርት አጋርዎ ነኝ። ይህንን ገጽ "${ctx.title}" ከእርስዎ ጋር አንብቤዋለሁ። ዛሬ እንዴት ልርዳዎት እችላለሁ? / ምን ላስረዳዎት?`
-      : `ሰላም! I'm Meri (መሪ), your AI study companion. I've read "${ctx.title}" with you. How can I guide you today? / እንዴት ልርዳዎት እችላለሁ?`;
+      case 'course':
+        if (ctx.url.includes('paced') && !ctx.url.includes('self-paced')) {
+          return lang === 'am'
+            ? `ሰላም Björn! በWR 100: Fundamentals of Effective Communication (ሳምንት 10) ላይ ነዎት። የሳምንቱ የውይይትና የጽሁፍ ስራዎች እንዴት እየሄዱ ነው?`
+            : `ሰላም Björn! I see you are on WR 100: Fundamentals of Effective Communication (Week 10 of 15). How can I assist with your immediate deliverables or score progress today?`;
+        }
+        return lang === 'am'
+          ? `ሰላም Amara! በVA-1: VA Foundations ላይ ነዎት፤ ሞጁል 1 ተጠናቋል። ቀጣዩን ሞጁል ለመጀመር ዝግጁ ነዎት? ምን ላብራራልዎት?`
+          : `ሰላም Amara! You are on VA-1: VA Foundations & Professional Identity. Module 1 is complete. How can I guide your next milestone today?`;
+
+      case 'lesson':
+        return lang === 'am'
+          ? `ሰላም! እኔ መሪ (Meri)፣ የትምህርት አጋርዎ ነኝ። ይህንን የትምህርት ገጽ "${ctx.lessonName || ctx.title}" ከእርስዎ ጋር አንብቤዋለሁ። ዛሬ ምን ላስረዳዎት እችላለሁ?`
+          : `ሰላም! I'm Meri (መሪ), your AI study companion. I've read "${ctx.lessonName || ctx.title}" with you. How can I guide you through this lesson today?`;
+
+      default:
+        return lang === 'am'
+          ? `ሰላም! እኔ መሪ (Meri) ነኝ። ይህንን ገጽ "${ctx.title}" እያየሁ ነው። ዛሬ እንዴት ልርዳዎት እችላለሁ?`
+          : `ሰላም! I'm Meri (መሪ), your AI learning and career guide. I'm active on "${ctx.title}". How can I guide you today?`;
+    }
   };
 
   // Sync initial context and greeting
@@ -70,47 +83,31 @@ export const Widget: React.FC<WidgetProps> = () => {
     const ctx = extractPageContext();
     setContext(ctx);
 
-    // Auto set mode based on page type
-    if (ctx.pageType === 'job') {
-      setMode('career_coach');
-    } else {
-      setMode('course_tutor');
-    }
-
     const greeting: Message = {
       id: 'greeting',
       sender: 'assistant',
       text: generateGreeting(ctx, language),
-      timestamp: '09:41 AM',
-      syncSource: 'Savanna Sync',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      syncSource: 'Host Sync',
     };
 
     setMessages([greeting]);
 
-    // Listen to custom dynamic context change events (e.g. from job switcher)
-    const handleContextEvent = () => {
-      const updated = extractPageContext();
+    // Initialize SPA URL change tracking and DOM mutation observation
+    initSpaContextTracking((updated) => {
       setContext(updated);
-      if (updated.pageType === 'job') {
-        setMode('career_coach');
-      }
       const syncNotice: Message = {
         id: `sync-${Date.now()}`,
         sender: 'assistant',
         text:
           language === 'am'
-            ? `አዲስ ገጽ ተመርጧል፡ "${updated.title}"`
+            ? `አዲስ ገጽ ተገኝቷል፡ "${updated.title}"`
             : `Active page updated: "${updated.title}"`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        syncSource: 'Page Event',
+        syncSource: 'SPA Route Sync',
       };
       setMessages((prev) => [...prev, syncNotice]);
-    };
-
-    window.addEventListener('meri-context-changed', handleContextEvent);
-    return () => {
-      window.removeEventListener('meri-context-changed', handleContextEvent);
-    };
+    });
   }, []);
 
   // Update greeting text if language changes while only greeting exists
@@ -121,8 +118,8 @@ export const Widget: React.FC<WidgetProps> = () => {
           id: 'greeting',
           sender: 'assistant',
           text: generateGreeting(context, language),
-          timestamp: '09:41 AM',
-          syncSource: 'Savanna Sync',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          syncSource: 'Host Sync',
         },
       ]);
     }
@@ -138,11 +135,6 @@ export const Widget: React.FC<WidgetProps> = () => {
   const handleRefreshContext = () => {
     const updated = extractPageContext();
     setContext(updated);
-    if (updated.pageType === 'job') {
-      setMode('career_coach');
-    } else {
-      setMode('course_tutor');
-    }
     const syncMsg: Message = {
       id: `sync-${Date.now()}`,
       sender: 'assistant',
@@ -170,30 +162,30 @@ export const Widget: React.FC<WidgetProps> = () => {
     setIsLoading(true);
 
     try {
-      const response = await askMeriAI(text, context, language, simpleMode, mode);
+      const response = await askMeriAI(text, context, language, simpleMode, publicKey);
 
       const assistantMsg: Message = {
         id: `assistant-${Date.now()}`,
         sender: 'assistant',
         text: response.answer,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        syncSource: response.source === 'cloud' ? 'Cloud AI' : 'Savanna Grounded',
+        syncSource: response.source === 'cloud' ? 'Cloud AI' : 'Knowledge Base',
         citations: response.citations,
       };
 
       setMessages((prev) => [...prev, assistantMsg]);
       setLiveAnnouncement(`New answer from Meri: ${response.answer.slice(0, 100)}`);
     } catch {
-      const fallbackMsg: Message = {
+      const errMsg: Message = {
         id: `err-${Date.now()}`,
         sender: 'assistant',
         text:
           language === 'am'
-            ? 'ይቅርታ፣ ምላሽ ለመስጠት አልተቻለም። እባክዎ እንደገና ይሞክሩ።'
-            : 'Sorry, I encountered an issue processing your request. Please try again.',
+            ? 'ይቅርታ፣ ጥያቄዎን ለማስተናገድ ችግር አጋጥሟል። እባክዎ እንደገና ይሞክሩ።'
+            : "I'm sorry, I encountered a temporary connection issue. Please try again.",
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
-      setMessages((prev) => [...prev, fallbackMsg]);
+      setMessages((prev) => [...prev, errMsg]);
     } finally {
       setIsLoading(false);
     }
@@ -275,17 +267,14 @@ export const Widget: React.FC<WidgetProps> = () => {
             language={language}
           />
 
-          {/* Mode Switcher */}
-          <ModeSwitcher mode={mode} onChangeMode={setMode} language={language} />
-
-          {/* Accessibility & Status Ribbon */}
+          {/* Status / Accessibility Ribbon */}
           <StatusRibbon
             language={language}
             voiceRate={voiceRate}
             onCycleVoiceRate={handleCycleVoiceRate}
           />
 
-          {/* Scrollable Conversation Feed */}
+          {/* Unified Conversation Feed */}
           <div className="flex-1 overflow-y-auto px-4 py-2 bg-slate-50/50">
             <MessageList
               messages={messages}
@@ -295,10 +284,10 @@ export const Widget: React.FC<WidgetProps> = () => {
               currentlySpeakingId={currentlySpeakingId}
             />
 
-            {/* Quick Actions */}
+            {/* Context-Aware Quick Actions */}
             <div className="mt-2">
               <QuickActions
-                mode={mode}
+                pageType={context.pageType}
                 language={language}
                 onSelectAction={handleSendMessage}
                 onOpenAccommodations={() => setShowAccommodations(true)}
