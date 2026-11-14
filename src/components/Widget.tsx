@@ -195,20 +195,29 @@ export const Widget: React.FC<WidgetProps> = ({ publicKey }) => {
     }
   };
 
+  const [listeningPreview, setListeningPreview] = useState('');
+
   // Voice Speech-To-Text
   const handleToggleListening = () => {
     if (isListening) {
       SpeechService.stopListening();
       setIsListening(false);
+      setListeningPreview('');
     } else {
+      setListeningPreview('');
       const started = SpeechService.startListening(
         language,
         (transcript) => {
           setIsListening(false);
+          setListeningPreview('');
           handleSendMessage(transcript);
         },
         () => {
           setIsListening(false);
+          setListeningPreview('');
+        },
+        (interim) => {
+          setListeningPreview(interim);
         }
       );
       if (started) {
@@ -261,7 +270,16 @@ export const Widget: React.FC<WidgetProps> = ({ publicKey }) => {
             onClose={() => setIsOpen(false)}
             onOpenLiveHelp={() => setShowLiveHelp(true)}
             isSpeaking={isSpeaking}
-            onToggleAudio={() => (isSpeaking ? handleStopSpeak() : handleSpeak(messages[messages.length - 1]?.text || ''))}
+            onToggleAudio={() => {
+              if (isSpeaking) {
+                handleStopSpeak();
+              } else {
+                const lastAssistantMsg = [...messages].reverse().find((m) => m.sender === 'assistant');
+                if (lastAssistantMsg) {
+                  handleSpeak(lastAssistantMsg.text, lastAssistantMsg.id);
+                }
+              }
+            }}
           />
 
           {/* Context Bar */}
@@ -317,6 +335,7 @@ export const Widget: React.FC<WidgetProps> = ({ publicKey }) => {
             language={language}
             isLoading={isLoading}
             isListening={isListening}
+            listeningPreview={listeningPreview}
             onToggleListening={handleToggleListening}
           />
         </div>

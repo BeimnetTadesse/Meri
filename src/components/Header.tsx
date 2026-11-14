@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, Minus, X, Volume2, UserCheck } from 'lucide-react';
+import { Sparkles, Minus, X, Volume2, VolumeX, UserCheck } from 'lucide-react';
 import { Language } from '../types';
 
 interface HeaderProps {
@@ -58,14 +58,14 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Read-Aloud / Audio button */}
         <button
           onClick={onToggleAudio}
-          title={isSpeaking ? 'ድምጽ አቁም' : 'ድምጽ አሰማ (Read Aloud)'}
+          title={isSpeaking ? (language === 'am' ? 'ድምጽ አቁም' : 'Stop speaking') : (language === 'am' ? 'ድምጽ አሰማ' : 'Read aloud')}
           className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
             isSpeaking
-              ? 'bg-emerald-100 text-emerald-800 animate-pulse'
+              ? 'bg-rose-100 text-rose-700 animate-pulse'
               : 'text-slate-600 hover:bg-slate-100'
           }`}
         >
-          <Volume2 className="w-4 h-4" />
+          {isSpeaking ? <VolumeX className="w-4 h-4 text-rose-600" /> : <Volume2 className="w-4 h-4" />}
         </button>
 
         {/* Live Help Escalation button */}

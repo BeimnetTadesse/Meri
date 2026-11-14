@@ -7,6 +7,7 @@ interface MessageInputProps {
   language: Language;
   isLoading: boolean;
   isListening: boolean;
+  listeningPreview?: string;
   onToggleListening: () => void;
 }
 
@@ -15,6 +16,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   language,
   isLoading,
   isListening,
+  listeningPreview,
   onToggleListening,
 }) => {
   const [text, setText] = useState('');
@@ -77,9 +79,11 @@ export const MessageInput: React.FC<MessageInputProps> = ({
           onKeyDown={handleKeyDown}
           placeholder={
             isListening
-              ? language === 'am'
+              ? listeningPreview
+                ? `🎙️ "${listeningPreview}..."`
+                : language === 'am'
                 ? 'እያዳመጥኩ ነው... ይናገሩ'
-                : 'Listening to your voice...'
+                : 'Listening... speak now'
               : language === 'am'
               ? 'ስለዚሁ ገጽ ማንኛውንም ይጠይቁ...'
               : 'Ask anything about this page...'

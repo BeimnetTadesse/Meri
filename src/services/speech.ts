@@ -1,22 +1,15 @@
 import { Language } from '../types';
 
-// ─── Web Speech API shim types ─────────────────────────────────────────────
+// ─── Web Speech API shim types ──────────────────────────────────────────────
 
 interface SpeechRecognitionResult {
   readonly isFinal: boolean;
   readonly length: number;
-  item(index: number): SpeechRecognitionAlternative;
-  [index: number]: SpeechRecognitionAlternative;
-}
-
-interface SpeechRecognitionAlternative {
-  readonly transcript: string;
-  readonly confidence: number;
+  [index: number]: { readonly transcript: string };
 }
 
 interface SpeechRecognitionResultList {
   readonly length: number;
-  item(index: number): SpeechRecognitionResult;
   [index: number]: SpeechRecognitionResult;
 }
 
@@ -29,7 +22,6 @@ interface SpeechRecognitionInstance extends EventTarget {
   lang: string;
   continuous: boolean;
   interimResults: boolean;
-  maxAlternatives: number;
   onresult: ((event: SpeechRecognitionEvent) => void) | null;
   onerror: ((event: Event) => void) | null;
   onend: (() => void) | null;
@@ -49,18 +41,22 @@ declare global {
 
 export class SpeechService {
   private static recognition: SpeechRecognitionInstance | null = null;
-  private static isSpeaking = false;
-
-  // Active utterance ref — needed to work around Chrome's cancel() bug
-  private static activeUtterance: SpeechSynthesisUtterance | null = null;
-  private static activeOnEnd: (() => void) | null = null;
+  private static isListeningActive = false;
 
   // ── Speech-to-Text ────────────────────────────────────────────────────────
 
+  /**
+   * Start listening for speech.
+   * - Collects words into a complete sentence while the user speaks.
+   * - onInterim(liveText) gives real-time visual feedback.
+   * - onResult(fullSentence) is called EXACTLY ONCE when speech concludes.
+   * - onEnd() is called when the listening session finishes to reset UI.
+   */
   static startListening(
     language: Language,
     onResult: (text: string) => void,
-    onEnd: () => void
+    onEnd: () => void,
+    onInterim?: (text: string) => void
   ): boolean {
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRec) {
@@ -68,95 +64,100 @@ export class SpeechService {
       return false;
     }
 
-    // Abort any active session cleanly before starting a new one
-    this._abortListening();
+    // Stop any existing session
+    this.stopListening();
 
     try {
       const rec = new SpeechRec();
       this.recognition = rec;
+      this.isListeningActive = true;
 
       rec.lang = language === 'am' ? 'am-ET' : 'en-US';
-      rec.continuous = false;      // stop after one utterance
-      rec.interimResults = true;   // get interim so we can collect the best transcript
-      rec.maxAlternatives = 1;
+      rec.continuous = false;     // auto-stop after user pauses
+      rec.interimResults = true;  // enable live transcript accumulation
 
-      // We collect the best transcript seen so far.
-      // The browser keeps calling onresult with longer and longer transcripts
-      // as it hears more words. We store the latest one and send it at the end.
-      let bestTranscript = '';
-      let resultSent = false;
+      let finalAccumulated = '';
+      let bestSeenText = '';
+      let hasDispatched = false;
 
       rec.onresult = (event: SpeechRecognitionEvent) => {
-        // Always take the last result's first alternative — it is the most
-        // complete transcript the browser has built so far this session.
-        const lastResult = event.results[event.results.length - 1];
-        const candidate = lastResult[0].transcript.trim();
-        if (candidate) {
-          bestTranscript = candidate;
+        let interimText = '';
+        let fullSessionText = '';
+
+        for (let i = 0; i < event.results.length; i++) {
+          const item = event.results[i];
+          const transcript = item[0]?.transcript || '';
+          fullSessionText += transcript;
+
+          if (item.isFinal) {
+            finalAccumulated += transcript;
+          } else {
+            interimText += transcript;
+          }
         }
 
-        // If the browser marks this segment as final we can send immediately
-        // and prevent onend from sending again.
-        if (lastResult.isFinal && bestTranscript && !resultSent) {
-          resultSent = true;
-          onResult(bestTranscript);
+        bestSeenText = (finalAccumulated || fullSessionText || interimText).trim();
+
+        if (onInterim && bestSeenText) {
+          onInterim(bestSeenText);
         }
       };
 
-      rec.onerror = (event: Event) => {
-        const errorType = (event as ErrorEvent).type;
-        console.warn('[Meri] STT error:', errorType);
-        // Don't call onEnd here — onend always fires after onerror too,
-        // so we handle everything in onend to avoid double-calling.
+      rec.onerror = (e: Event) => {
+        const errorMsg = (e as ErrorEvent).message || e.type;
+        console.warn('[Meri] STT error event:', errorMsg);
       };
 
       rec.onend = () => {
         this.recognition = null;
-        if (!resultSent) {
-          // Browser ended without a final result — send whatever we collected
-          // (interim transcript), or just call onEnd to reset the mic button.
-          if (bestTranscript) {
-            resultSent = true;
-            onResult(bestTranscript);
-          } else {
-            onEnd();
+        this.isListeningActive = false;
+
+        if (!hasDispatched) {
+          hasDispatched = true;
+          const textToSend = (finalAccumulated || bestSeenText).trim();
+          if (textToSend) {
+            onResult(textToSend);
           }
-        } else {
-          // Result was already sent — just reset listening state
-          onEnd();
         }
+        onEnd();
       };
 
       rec.start();
       return true;
     } catch (err) {
-      console.warn('[Meri] Error starting STT:', err);
+      console.warn('[Meri] Could not start STT:', err);
       this.recognition = null;
+      this.isListeningActive = false;
       onEnd();
       return false;
     }
   }
 
+  /**
+   * User manually clicks the mic button to finish speaking early.
+   * Calls rec.stop() to let the recognizer finalize and fire onend with the transcript.
+   */
   static stopListening(): void {
-    this._abortListening();
-  }
-
-  private static _abortListening(): void {
-    if (this.recognition) {
+    if (this.recognition && this.isListeningActive) {
+      this.isListeningActive = false;
       try {
-        this.recognition.onresult = null;
-        this.recognition.onerror = null;
-        this.recognition.onend = null;
-        this.recognition.abort();
+        this.recognition.stop();
       } catch {
-        // ignore — recognition may already be stopped
+        try {
+          this.recognition.abort();
+        } catch {
+          // ignore
+        }
       }
-      this.recognition = null;
     }
   }
 
   // ── Text-to-Speech ────────────────────────────────────────────────────────
 
+  /**
+   * Speak text aloud.
+   * Resumes any paused synthesis state before starting.
+   */
   static speak(
     text: string,
     language: Language,
@@ -165,59 +166,52 @@ export class SpeechService {
   ): boolean {
     if (!('speechSynthesis' in window)) return false;
 
-    // Cancel any in-progress speech and manually fire its onEnd so the UI
-    // resets before we start the new utterance. Chrome's cancel() does NOT
-    // reliably fire utterance.onend, so we do it ourselves.
-    this._cancelSpeechAndNotify();
+    try {
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      }
+      window.speechSynthesis.cancel();
+    } catch {
+      // ignore
+    }
 
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = language === 'am' ? 'am-ET' : 'en-US';
     utterance.rate = rate;
 
-    const handleEnd = () => {
-      if (this.activeUtterance === utterance) {
-        this.activeUtterance = null;
-        this.activeOnEnd = null;
-        this.isSpeaking = false;
+    let hasEnded = false;
+    const finish = () => {
+      if (!hasEnded) {
+        hasEnded = true;
+        if (onEnd) onEnd();
       }
-      if (onEnd) onEnd();
     };
 
-    utterance.onend = handleEnd;
-    utterance.onerror = handleEnd;
+    utterance.onend = finish;
+    utterance.onerror = finish;
 
-    this.activeUtterance = utterance;
-    this.activeOnEnd = onEnd ?? null;
-    this.isSpeaking = true;
-
-    window.speechSynthesis.speak(utterance);
-    return true;
-  }
-
-  static stopSpeaking(): void {
-    this._cancelSpeechAndNotify();
-  }
-
-  private static _cancelSpeechAndNotify(): void {
-    if (!('speechSynthesis' in window)) return;
-
-    // If there's a pending onEnd callback, call it now — Chrome's cancel()
-    // won't fire utterance.onend, so the React state would stay stuck on
-    // "Speaking..." without this.
-    const pendingOnEnd = this.activeOnEnd;
-    this.activeUtterance = null;
-    this.activeOnEnd = null;
-    this.isSpeaking = false;
-
-    window.speechSynthesis.cancel();
-
-    if (pendingOnEnd) {
-      // Small delay so React batch update doesn't collide with cancel()
-      setTimeout(pendingOnEnd, 50);
+    try {
+      window.speechSynthesis.speak(utterance);
+      return true;
+    } catch (e) {
+      console.warn('[Meri] TTS speak error:', e);
+      finish();
+      return false;
     }
   }
 
-  static getIsSpeaking(): boolean {
-    return this.isSpeaking;
+  /**
+   * Stop speaking immediately.
+   */
+  static stopSpeaking(): void {
+    if (!('speechSynthesis' in window)) return;
+    try {
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      }
+      window.speechSynthesis.cancel();
+    } catch (e) {
+      console.warn('[Meri] TTS cancel error:', e);
+    }
   }
 }
