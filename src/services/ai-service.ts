@@ -52,20 +52,24 @@ function generateKnowledgeBaseResponse(
 ): AIResponse {
   const q = query.toLowerCase();
 
-  // --- CAREER COACH MODE ---
+  // ==========================================
+  // --- 1. CAREER COACH MODE (Job Portal) ---
+  // ==========================================
   if (mode === 'career_coach') {
-    if (q.includes('qualif') || q.includes('ብቁ') || q.includes('match')) {
+    // Qualifications match
+    if (q.includes('qualif') || q.includes('ብቁ') || q.includes('match') || q.includes('skill')) {
+      const skillsStr = (context.skills || ['Python', 'Django', 'React']).join(', ');
       if (language === 'am') {
         return {
           answer: simpleMode
-            ? 'ለዚህ ስራ Python፣ Django እና React ያስፈልጋሉ። እነዚህን በአልኤክስ (ALX) ተምረዋቸዋል፣ ስለዚህ በደንብ ያሟላሉ! ተጨማሪ የREST API ልምምድ ቢያደርጉ ይመረጣል።'
-            : 'በገጹ ላይ ባሉት መስፈርቶች መሰረት፣ እጩው Python፣ Django፣ React እና REST APIs ማወቅ አለበት። እነዚህ በሶፍትዌር ምህንድስና ስርአተ ትምህርት ውስጥ የተካተቱ በመሆናቸው ለስራው ጥሩ ብቃት አለዎት።',
+            ? `ለዚህ "${context.jobTitle}" ስራ ${skillsStr} ያስፈልጋሉ። እነዚህን በአልኤክስ (ALX) ተምረዋቸዋል፣ ስለዚህ ጥሩ ብቃት አለዎት! ፕሮጀክት ሰርተው ፖርትፎሊዮዎን ቢያሳዩ ይመረጣል።`
+            : `በገጹ ላይ ባለው ዝርዝር መሰረት ለ${context.jobTitle} የሚያስፈልጉት ክህሎቶች፡ ${skillsStr} ናቸው። እነዚህ በALX የትምህርት ካሪኩለም ውስጥ የተካተቱ በመሆናቸው ለስራው ተመጣጣኝ ብቃት አለዎት።`,
           citations: [
             {
               id: 'c-job-1',
-              title: 'Job Requirements',
-              section: 'Required Skills: Python, Django, React',
-              snippet: 'Develop and maintain web applications with Python & Django.',
+              title: `${context.jobTitle} Requirements`,
+              section: `Required Competencies: ${skillsStr}`,
+              snippet: context.visibleContent.slice(0, 160),
             },
           ],
           source: 'offline_faq',
@@ -73,30 +77,61 @@ function generateKnowledgeBaseResponse(
       }
       return {
         answer: simpleMode
-          ? 'Yes! You match this job well. It needs Python, Django, and React, which you studied at ALX. Keep practicing building simple APIs to be fully ready!'
-          : 'Based on the job posting, the core qualifications are Python, Django, React, and REST APIs. Your ALX curriculum directly maps to these competencies.',
+          ? `You have a strong match for this ${context.jobTitle} position! The role requires ${skillsStr}. You practiced these at ALX. Highlight your capstone project when applying!`
+          : `Based on the job posting, the core competencies are: ${skillsStr}. Your ALX curriculum directly maps to these requirements.`,
         citations: [
           {
             id: 'c-job-1',
-            title: 'Job Requirements',
-            section: 'Required Skills: Python, Django, React',
-            snippet: 'Develop and maintain web applications with Python & Django.',
+            title: `${context.jobTitle} Requirements`,
+            section: `Required Competencies: ${skillsStr}`,
+            snippet: context.visibleContent.slice(0, 160),
           },
         ],
         source: 'offline_faq',
       };
     }
 
-    if (q.includes('accommodat') || q.includes('ድጋፍ') || q.includes('help')) {
+    // Interview Accommodations
+    if (q.includes('accommodat') || q.includes('ድጋፍ') || q.includes('help') || q.includes('request')) {
       if (language === 'am') {
         return {
-          answer: 'ለቃለ-መጠይቁ የአማርኛ አስተርጓሚ፣ ተጨማሪ ጊዜ ወይም በስልክ ብቻ የሚደረግ ቃለ-መጠይቅ መጠየቅ ይችላሉ። ከላይ ያለውን "የቃለ-መጠይቅ ድጋፍ ጠይቅ" የሚለውን በመጫን ማመልከት ይችላሉ።',
+          answer: 'ለዚህ ስራ ቃለ-መጠይቅ የአማርኛ አስተርጓሚ፣ ተጨማሪ የ50% ጊዜ ወይም በስልክ ብቻ የሚደረግ ቃለ-መጠይቅ መጠየቅ ይችላሉ። ከታች ያለውን "የቃለ መጠይቅ ድጋፍ ጠይቅ" የሚለውን ቁልፍ ይጫኑ።',
+          citations: [
+            {
+              id: 'c-job-acc',
+              title: 'Inclusive Employer Commitment',
+              section: 'Interview Accommodations',
+              snippet: 'Accommodations are supported: Amharic translation, extended assessment time, or low-bandwidth audio interviews.',
+            },
+          ],
+          source: 'offline_faq',
+        };
+      }
+      return {
+        answer: 'You can request interview accommodations including an Amharic translator, 50% extra assessment time, or a phone-only interview. Click "Request accommodations" to submit your request.',
+        citations: [
+          {
+            id: 'c-job-acc',
+            title: 'Inclusive Employer Commitment',
+            section: 'Interview Accommodations',
+            snippet: 'Accommodations are supported: Amharic translation, extended assessment time, or low-bandwidth audio interviews.',
+          },
+        ],
+        source: 'offline_faq',
+      };
+    }
+
+    // Mock Interview
+    if (q.includes('interview') || q.includes('ቃለ መጠይቅ') || q.includes('mock')) {
+      if (language === 'am') {
+        return {
+          answer: `ለ${context.jobTitle} ቃለ መጠይቅ ዝግጁ ነዎት? የመጀመሪያው ጥያቄ፡ "በPython እና React የሰሩትን አንድ ትልቅ ፕሮጀክት እና ያጋጠመዎትን ፈተና እንዴት እንደፈቱ ያስረዱ?" ምላሽዎን በድምጽ ወይም በጽሁፍ ይንገሩኝ።`,
           citations: [],
           source: 'offline_faq',
         };
       }
       return {
-        answer: 'You can request interview accommodations including an Amharic translator, extended pacing, or phone-based interviews using our Career Gateway modal.',
+        answer: `Let's start your mock interview for ${context.jobTitle}! Question 1: "Can you describe a challenging bug you encountered while building a REST API or React component, and how you resolved it?"`,
         citations: [],
         source: 'offline_faq',
       };
@@ -106,38 +141,106 @@ function generateKnowledgeBaseResponse(
     if (language === 'am') {
       return {
         answer: simpleMode
-          ? `ይህ ስራ ${context.jobTitle || 'የሶፍትዌር ሰሪ'} የስራ መደብ ነው። በድርጅቱ ውስጥ የድረ-ገጾችን እና የቴክኖሎጂ አሰራሮችን ማበልጸግ ነው።`
-          : `ይህ የስራ ማስታወቂያ ለ${context.jobTitle || 'Junior Python Developer'} ነው። ዋና ተግባራቱ በ${context.company || 'ኩባንያው'} ውስጥ የሶፍትዌር ስርዓቶችን ማጎልበት እና የውሂብ አስተዳደርን ማከናወን ነው።`,
-        citations: [{ id: 'c-job-desc', title: 'Job Overview', section: 'Responsibilities', snippet: context.visibleContent.slice(0, 140) }],
+          ? `ይህ የስራ እድል ለ"${context.jobTitle}" ነው። በኩባንያው ውስጥ የድረ-ገጽ ወይም የሶፍትዌር ስርዓቶችን ማበልጸግ እና ማስተዳደር ነው።`
+          : `ይህ የስራ ማስታወቂያ ለ${context.jobTitle} በ${context.company || 'አጋር ድርጅት'} ውስጥ ነው። ዋና አላማው በዘመናዊ ቴክኖሎጂዎች የቢዝነስ እና የሶፍትዌር ስራዎችን ማሳለጥ ነው።`,
+        citations: [{ id: 'c-job-desc', title: context.jobTitle || 'Job Overview', section: 'Responsibilities', snippet: context.visibleContent.slice(0, 160) }],
         source: 'offline_faq',
       };
     }
 
     return {
       answer: simpleMode
-        ? `This job is for a ${context.jobTitle || 'Junior Developer'}. You will build and test web tools using Python and React.`
-        : `This role is ${context.jobTitle || 'Junior Python Developer'} at ${context.company || 'Partner Company'}. Key duties include creating backend APIs and collaborating on frontend integration.`,
-      citations: [{ id: 'c-job-desc', title: 'Job Overview', section: 'Responsibilities', snippet: context.visibleContent.slice(0, 140) }],
+        ? `This job is for a ${context.jobTitle}. You will build and test digital services with team members across Africa.`
+        : `This role is ${context.jobTitle} at ${context.company || 'Partner Company'}. Key duties include implementing reliable features and collaborating with cross-functional teams.`,
+      citations: [{ id: 'c-job-desc', title: context.jobTitle || 'Job Overview', section: 'Core Responsibilities', snippet: context.visibleContent.slice(0, 160) }],
       source: 'offline_faq',
     };
   }
 
-  // --- COURSE TUTOR MODE (Savanna) ---
-  // Query matches Section 2: General vs Specialized VA
+  // ==========================================
+  // --- 2. COURSE TUTOR MODE (Savanna) ---
+  // ==========================================
+
+  // A. Paced Homepage (Björn Sibanda, WR 100, Week 10)
+  if (context.url.includes('paced') && !context.url.includes('self-paced')) {
+    if (q.includes('deliverable') || q.includes('due') || q.includes('ስራዎች') || q.includes('ቀነ ገደብ')) {
+      if (language === 'am') {
+        return {
+          answer: 'ለሳምንት 10 የWR 100 ትምህርት፡ አሁን የሚጠበቅብዎት የስራ ባልደረባ ግምገማ (Peer Review Discussion) እና የጽሁፍ ማጠቃለያ (Written Reflection) ናቸው። የሳምንቱ ማጠናቀቂያ ቀን ከመድረሱ በፊት ቢያስገቡ ይመረጣል።',
+          citations: [
+            {
+              id: 'c-paced-1',
+              title: 'Week 10 Deliverables',
+              section: 'Immediate Deliverables',
+              snippet: 'Peer review discussion and written reflection due for Week 10 of 15.',
+            },
+          ],
+          source: 'offline_faq',
+        };
+      }
+      return {
+        answer: 'For Week 10 of WR 100, your immediate deliverables are the Peer Review Discussion and the Written Reflection. Submit them before the week period closes!',
+        citations: [
+          {
+            id: 'c-paced-1',
+            title: 'Week 10 Deliverables',
+            section: 'Immediate Deliverables',
+            snippet: 'Peer review discussion and written reflection due for Week 10 of 15.',
+          },
+        ],
+        source: 'offline_faq',
+      };
+    }
+
+    if (q.includes('score') || q.includes('progress') || q.includes('ውጤት')) {
+      if (language === 'am') {
+        return {
+          answer: 'አሁን ያለዎት አጠቃላይ ውጤት 59.56% ነው። በሳምንት 10 ላይ በመሆናችሁ ሳምንታዊ ስራዎችን በሰአቱ በማስረከብ ውጤትዎን ወደ 70%+ የማለፊያ ነጥብ ማሳደግ ይችላሉ።',
+          citations: [{ id: 'c-score', title: 'Period Progress', section: 'Overall Score: 59.56%', snippet: 'Current course score slightly behind target.' }],
+          source: 'offline_faq',
+        };
+      }
+      return {
+        answer: 'Your overall score is currently 59.56% ("slightly behind"). Submitting the remaining deliverables for Weeks 10 through 15 will comfortably bring you above the graduation threshold.',
+        citations: [{ id: 'c-score', title: 'Period Progress', section: 'Overall Score: 59.56%', snippet: 'Current course score slightly behind target.' }],
+        source: 'offline_faq',
+      };
+    }
+  }
+
+  // B. Self-Paced Homepage (Amara Nwosu, VA-1)
+  if (context.url.includes('self-paced')) {
+    if (q.includes('progress') || q.includes('gauge') || q.includes('threshold') || q.includes('እድገት')) {
+      if (language === 'am') {
+        return {
+          answer: 'እስካሁን ከ3ቱ ሞጁሎች 1ኛውን አጠናቀዋል (16% እድገት)። የማለፊያ ነጥቡ 70% ነው። የ11 ቀናት የፍጥነት ማበረታቻ (Pacing Boost) ስላለዎት ሞጁል 2ን አሁን መጀመር ይመረጣል።',
+          citations: [{ id: 'c-self-1', title: 'Course Progression Gauge', section: '16% of 70% threshold', snippet: '1 of 3 modules complete, 11 days pacing boost remaining.' }],
+          source: 'offline_faq',
+        };
+      }
+      return {
+        answer: 'You have completed Module 1 of 3 (16% progression towards the 70% graduation threshold). You have 11 days left on your pacing boost to tackle Module 2!',
+        citations: [{ id: 'c-self-1', title: 'Course Progression Gauge', section: '16% of 70% threshold', snippet: '1 of 3 modules complete, 11 days pacing boost remaining.' }],
+        source: 'offline_faq',
+      };
+    }
+  }
+
+  // C. Concept Page (The Future of the VA Industry)
   if (q.includes('section 2') || q.includes('distinction') || q.includes('specializ') || q.includes('ልዩነት')) {
     if (language === 'am') {
       return {
         answer: simpleMode
-          ? 'በትምህርቱ ክፍል 2 መሰረት፣ አጠቃላይ ረዳት (General VA) የቀን መቁጠሪያ ማስተካከልና ኢሜይል መመለስን የመሳሰሉ መደበኛ ስራዎችን ይሰራል። ልዩ ረዳት (Specialized VA) ግን ከፍተኛ የቴክኖሎጂ አሰራርንና የንግድ አስተዳደርን በጥልቀት ያከናውናል።'
+          ? 'በትምህርቱ ክፍል 2 መሰረት፣ አጠቃላይ ረዳት (General VA) እንደ ቀጠሮ ማስተካከልና ኢሜይል መመለስ ያሉ መደበኛ ስራዎችን ይሰራል። ልዩ ረዳት (Specialized VA) ግን ከፍተኛ የቴክኖሎጂ አውቶሜሽን እና የደንበኞች ውሂብ ትንተና ላይ ያተኩራል።'
           : 'በትምህርቱ ክፍል 2 ("An Important Distinction") መሰረት፣ በጠቅላላ እና በልዩ ምናባዊ ረዳት መካከል ያለው መለያየት የስራው ስፋት እና የክህሎት ጥልቀት ነው። ጠቅላላ ረዳቶች መደበኛ የቢሮ ድጋፍ ሲሰጡ፣ ልዩ ረዳቶች ደግሞ በስራ አስፈጻሚ አውቶሜሽን እና በደንበኞች ውሂብ ትንተና ላይ ያተኩራሉ።',
         citations: [
           {
             id: 'c-1',
             title: 'Section 2: An Important Distinction',
-            section: 'General vs Specialized Virtual Assistants',
+            section: 'General Track vs Specialized Track',
             snippet: 'While General Virtual Assistants handle broad administrative, scheduling, and email triage workloads, Specialized Virtual Assistants focus on domain niches...',
             pageNumber: '2',
-            targetSelector: '#what-is-shaping-the-future-of-va-work',
+            targetSelector: '#section-2-an-important-distinction',
           },
         ],
         source: 'offline_faq',
@@ -146,7 +249,7 @@ function generateKnowledgeBaseResponse(
 
     return {
       answer: simpleMode
-        ? 'According to Section 2 of this lesson, a General Virtual Assistant takes care of everyday tasks like calendar management and emails. A Specialized VA focuses on deeper skills like executive automation and analytics.'
+        ? 'According to Section 2, General Virtual Assistants manage everyday routine tasks like calendars and emails. Specialized Virtual Assistants focus on deeper skills like executive automation and analytics.'
         : 'According to the lesson, the core separation comes down to scope, domain ownership, and hourly value. General VAs handle broad administrative tasks, calendar curation, and inbox management, whereas Specialized VAs focus on executive automation, data analysis, and domain-specific operations.',
       citations: [
         {
@@ -155,26 +258,26 @@ function generateKnowledgeBaseResponse(
           section: 'General Track vs Specialized Track',
           snippet: 'While General Virtual Assistants handle broad administrative, scheduling, and email triage workloads, Specialized Virtual Assistants focus on domain niches such as Executive Operations...',
           pageNumber: '2',
-          targetSelector: '#what-is-shaping-the-future-of-va-work',
+          targetSelector: '#section-2-an-important-distinction',
         },
       ],
       source: 'offline_faq',
     };
   }
 
-  // General Explanation of Lesson
+  // General Explanation
   if (q.includes('explain') || q.includes('summar') || q.includes('አስረዳ') || q.includes('አጠቃልል')) {
     if (language === 'am') {
       return {
         answer: simpleMode
-          ? 'ይህ ትምህርት "The Future of the VA Industry" ይባላል። ትምህርቱ እንደሚያሳየው፣ ቴክኖሎጂና አርቴፊሻል ኢንተለጀንስ የረዳቶችን ስራ አያጠፉም፤ ይልቁንም ረዳቶች በቴክኖሎጂ ታግዘው የተሻለ ስራ እንዲሰሩ ያግዛሉ።'
-          : 'ትምህርቱ "The Future of the VA Industry" የርቀት ስራ እድገትን እና የሰው ባለሙያዎች ከአርቴፊሻል ኢንተለጀንስ (AI) ጋር ተቀናጅተው የሚሰሩበትን መንገድ ያብራራል። አዳዲስ ቴክኖሎጂዎች የድጋፍ ስራዎች እንዴት እንደሚከናወኑ እና ደንበኞች በዋናነት ምን እንደሚፈልጉ እየቀየሩ ነው።',
+          ? `ይህ ትምህርት "${context.title}" ይባላል። ዋናው ነጥብ አዳዲስ ቴክኖሎጂዎችንና ክህሎቶችን በመማር ለስራ ገበያው የተሻለ ዋጋ መስጠት ነው።`
+          : `ትምህርቱ "${context.title}" የሚያስረዳው፡ ${context.visibleContent.slice(0, 220)}... ለተጨማሪ ጥያቄ ክፍል 2ን ወይም አስቸጋሪ ቃላትን ይጠይቁኝ።`,
         citations: [
           {
             id: 'c-overview',
-            title: 'Overview',
-            section: 'The Future of the VA Industry',
-            snippet: 'The Virtual Assistant profession is not shrinking. It is evolving. As businesses become more digital...',
+            title: context.title,
+            section: context.headings[0] || 'Core Section',
+            snippet: context.visibleContent.slice(0, 160),
             pageNumber: '1',
           },
         ],
@@ -184,14 +287,14 @@ function generateKnowledgeBaseResponse(
 
     return {
       answer: simpleMode
-        ? 'This lesson is called "The Future of the VA Industry". It explains that remote virtual assistance is growing, and learning to work with AI will make you much more valuable to clients.'
-        : 'This lesson covers the rapid evolution of remote assistance. As businesses digitize, the demand for support professionals continues to expand. AI is not replacing assistants—it is reshaping how they deliver high-value support.',
+        ? `This content covers "${context.title}". The main takeaway is adapting to modern digital tools and delivering high-value support.`
+        : `Based on "${context.title}": ${context.visibleContent.slice(0, 240)}... Ask me about any specific section or term!`,
       citations: [
         {
           id: 'c-overview',
-          title: 'Lesson Overview',
-          section: 'The Virtual Assistant profession is not shrinking. It is evolving.',
-          snippet: 'As businesses become more digital, more global, and more comfortable with remote collaboration, the need for skilled support professionals continues to grow.',
+          title: context.title,
+          section: context.headings[0] || 'Core Section',
+          snippet: context.visibleContent.slice(0, 160),
           pageNumber: '1',
         },
       ],
@@ -199,18 +302,18 @@ function generateKnowledgeBaseResponse(
     };
   }
 
-  // Default Course Tutor Response
+  // Default Course Response
   if (language === 'am') {
     return {
       answer: simpleMode
-        ? `በትምህርቱ ገጽ "${context.title}" መሰረት፣ ዋናው ሃሳብ በክህሎት ማደግና ለደንበኞች ጠቃሚ እሴት መስጠት ነው።`
-        : `በዚህ ትምህርት ገጽ ላይ በተመለከተው መሰረት፡ "${context.visibleContent.slice(0, 200)}..." ለተጨማሪ ዝርዝር የትኛውን ክፍል ማብራራት እንዳለብኝ ይጠይቁኝ።`,
+        ? `በትምህርቱ ገጽ "${context.title}" መሰረት፣ ዋናው ሃሳብ በክህሎት ማደግና የተሻለ ስራ መስራት ነው።`
+        : `በዚህ ገጽ ላይ በተመለከተው መሰረት፡ "${context.visibleContent.slice(0, 180)}..." ምን ላብራራልዎት?`,
       citations: [
         {
           id: 'c-default',
           title: context.title,
-          section: context.headings[0] || 'Core Concept',
-          snippet: context.visibleContent.slice(0, 160),
+          section: context.headings[0] || 'Core Section',
+          snippet: context.visibleContent.slice(0, 140),
         },
       ],
       source: 'offline_faq',
@@ -219,14 +322,14 @@ function generateKnowledgeBaseResponse(
 
   return {
     answer: simpleMode
-      ? `Based on the lesson "${context.title}", the main point is growing your practical skills and understanding what clients need most.`
-      : `Based on "${context.title}", the content highlights: ${context.visibleContent.slice(0, 220)}... Feel free to ask about any specific section!`,
+      ? `Based on "${context.title}", the key focus is practical mastery and understanding core concepts.`
+      : `Based on "${context.title}": ${context.visibleContent.slice(0, 200)}... Let me know which part you want to explore!`,
     citations: [
       {
         id: 'c-default',
         title: context.title,
         section: context.headings[0] || 'Core Section',
-        snippet: context.visibleContent.slice(0, 160),
+        snippet: context.visibleContent.slice(0, 140),
       },
     ],
     source: 'offline_faq',

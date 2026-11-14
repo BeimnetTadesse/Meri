@@ -41,27 +41,76 @@ export const Widget: React.FC<WidgetProps> = () => {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  const generateGreeting = (ctx: PageContext, lang: Language): string => {
+    if (ctx.pageType === 'job') {
+      return lang === 'am'
+        ? `ሰላም! እኔ መሪ (Meri)፣ የእርስዎ የስራ አሰልጣኝ ነኝ። የ"${ctx.jobTitle || 'ቴክኖሎጂ'}" የስራ እድልን ከእርስዎ ጋር እያየሁ ነው። ለቃለ-መጠይቅ ለመዘጋጀት ወይም ብቃትዎትን ለማወቅ እንዴት ልርዳዎት?`
+        : `ሰላም! I'm Meri (መሪ), your Career Coach for this ${ctx.jobTitle || 'Tech Opportunity'} role. I can check your qualification match, run mock interviews, or help request accommodations. How can I guide you today?`;
+    }
+
+    if (ctx.url.includes('paced') && !ctx.url.includes('self-paced')) {
+      return lang === 'am'
+        ? `ሰላም Björn! በWR 100: Fundamentals of Effective Communication (ሳምንት 10) ላይ ነዎት። የሳምንቱ የውይይትና የጽሁፍ ስራዎች እንዴት እየሄዱ ነው?`
+        : `ሰላም Björn! I see you are on WR 100: Fundamentals of Effective Communication (Week 10 of 15). How can I assist with your immediate deliverables or score progress today?`;
+    }
+
+    if (ctx.url.includes('self-paced')) {
+      return lang === 'am'
+        ? `ሰላም Amara! በVA-1: VA Foundations (ሞጁል 1) ላይ ነዎት፤ 16% አጠናቀዋል። ሞጁል 2ን ለመጀመር ዝግጁ ነዎት? ምን ላብራራልዎት?`
+        : `ሰላም Amara! You are on VA-1: VA Foundations & Professional Identity (16% complete). Ready to conquer Module 2? How can I guide your learning today?`;
+    }
+
+    return lang === 'am'
+      ? `ሰላም! እኔ መሪ (Meri)፣ የትምህርት አጋርዎ ነኝ። ይህንን ገጽ "${ctx.title}" ከእርስዎ ጋር አንብቤዋለሁ። ዛሬ እንዴት ልርዳዎት እችላለሁ? / ምን ላስረዳዎት?`
+      : `ሰላም! I'm Meri (መሪ), your AI study companion. I've read "${ctx.title}" with you. How can I guide you today? / እንዴት ልርዳዎት እችላለሁ?`;
+  };
+
   // Sync initial context and greeting
   useEffect(() => {
     const ctx = extractPageContext();
     setContext(ctx);
 
+    // Auto set mode based on page type
     if (ctx.pageType === 'job') {
       setMode('career_coach');
+    } else {
+      setMode('course_tutor');
     }
 
-    const initialGreeting: Message = {
+    const greeting: Message = {
       id: 'greeting',
       sender: 'assistant',
-      text:
-        language === 'am'
-          ? `ሰላም! እኔ መሪ (Meri)፣ የትምህርትና የስራ አጋርዎ ነኝ። ይህንን ገጽ "${ctx.title}" ከእርስዎ ጋር አንብቤዋለሁ። ዛሬ እንዴት ልርዳዎት እችላለሁ?`
-          : `ሰላም! I'm Meri (መሪ), your AI study & career companion. I've read this page with you. How can I guide you today? / እንዴት ልርዳዎት እችላለሁ?`,
+      text: generateGreeting(ctx, language),
       timestamp: '09:41 AM',
       syncSource: 'Savanna Sync',
     };
 
-    setMessages([initialGreeting]);
+    setMessages([greeting]);
+
+    // Listen to custom dynamic context change events (e.g. from job switcher)
+    const handleContextEvent = () => {
+      const updated = extractPageContext();
+      setContext(updated);
+      if (updated.pageType === 'job') {
+        setMode('career_coach');
+      }
+      const syncNotice: Message = {
+        id: `sync-${Date.now()}`,
+        sender: 'assistant',
+        text:
+          language === 'am'
+            ? `አዲስ ገጽ ተመርጧል፡ "${updated.title}"`
+            : `Active page updated: "${updated.title}"`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        syncSource: 'Page Event',
+      };
+      setMessages((prev) => [...prev, syncNotice]);
+    };
+
+    window.addEventListener('meri-context-changed', handleContextEvent);
+    return () => {
+      window.removeEventListener('meri-context-changed', handleContextEvent);
+    };
   }, []);
 
   // Update greeting text if language changes while only greeting exists
@@ -71,10 +120,7 @@ export const Widget: React.FC<WidgetProps> = () => {
         {
           id: 'greeting',
           sender: 'assistant',
-          text:
-            language === 'am'
-              ? `ሰላም! እኔ መሪ (Meri)፣ የትምህርትና የስራ አጋርዎ ነኝ። ይህንን ገጽ "${context.title}" ከእርስዎ ጋር አንብቤዋለሁ። ዛሬ እንዴት ልርዳዎት እችላለሁ?`
-              : `ሰላም! I'm Meri (መሪ), your AI study & career companion. I've read this page with you. How can I guide you today? / እንዴት ልርዳዎት እችላለሁ?`,
+          text: generateGreeting(context, language),
           timestamp: '09:41 AM',
           syncSource: 'Savanna Sync',
         },
@@ -94,6 +140,8 @@ export const Widget: React.FC<WidgetProps> = () => {
     setContext(updated);
     if (updated.pageType === 'job') {
       setMode('career_coach');
+    } else {
+      setMode('course_tutor');
     }
     const syncMsg: Message = {
       id: `sync-${Date.now()}`,

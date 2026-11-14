@@ -1,10 +1,11 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Savanna LMS Hub — Host Course View</title>
-    <!-- Modern typography -->
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Savanna static pages &amp; Career Gateway Hub</title>
+    <link rel="stylesheet" href="assets/css/application_alx.css" media="all" />
+    <link rel="stylesheet" href="assets/css/app.css" media="all" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -13,346 +14,160 @@
     />
     <style>
       body {
-        margin: 0;
-        font-family: 'Inter', -apple-system, sans-serif;
+        padding: 3rem 1.5rem 6rem 1.5rem;
         background-color: #f8fafc;
-        color: #0f172a;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       }
-
-      /* Host Navigation Bar matching design */
-      .host-header {
-        background: #ffffff;
-        border-bottom: 1px solid #e2e8f0;
-        padding: 0.85rem 2rem;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
+      .hub-container {
+        max-width: 52rem;
+        margin: 0 auto;
       }
-      .host-brand {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-      }
-      .host-logo {
-        width: 38px;
-        height: 38px;
-        border-radius: 50%;
-        background: #16a34a;
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 800;
-        font-size: 1.1rem;
-      }
-      .host-title {
-        font-size: 1.05rem;
-        font-weight: 700;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-      }
-      .host-subtitle {
-        font-size: 0.75rem;
-        color: #64748b;
-      }
-      .host-badge-online {
-        background: #dcfce7;
-        color: #15803d;
-        padding: 2px 8px;
-        border-radius: 9999px;
-        font-size: 0.7rem;
-        font-weight: 600;
-      }
-      .host-controls {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-      }
-      .demo-switcher-btn {
-        background: #0f172a;
-        color: #ffffff;
-        border: none;
-        padding: 0.45rem 1rem;
-        border-radius: 8px;
-        font-size: 0.8rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: opacity 0.2s;
-      }
-      .demo-switcher-btn:hover {
-        opacity: 0.9;
-      }
-
-      /* Host Content Page */
-      .page-container {
-        max-width: 900px;
-        margin: 2rem auto;
-        padding: 0 1.5rem 6rem 1.5rem;
-      }
-      .breadcrumbs {
-        font-size: 0.85rem;
-        color: #64748b;
-        margin-bottom: 0.75rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-      }
-      .content-card {
+      .page-card-item {
         background: #ffffff;
         border: 1px solid #e2e8f0;
         border-radius: 16px;
-        padding: 2.5rem;
-        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        text-decoration: none;
+        color: inherit;
+        display: block;
+        padding: 1.75rem 2rem;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
+        position: relative;
+        overflow: hidden;
       }
-      .page-header-row {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        margin-bottom: 1.5rem;
+      .page-card-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+        border-color: #cbd5e1;
       }
-      .page-title {
-        font-size: 1.85rem;
-        font-weight: 800;
-        color: #0f172a;
-        margin: 0;
-      }
-      .est-read {
-        background: #dcfce7;
-        color: #166534;
-        font-size: 0.75rem;
+      .card-link-title {
+        color: #e11d48;
+        font-size: 1.15rem;
         font-weight: 700;
-        padding: 4px 10px;
-        border-radius: 9999px;
-      }
-      .lead-text {
-        font-size: 1.05rem;
-        line-height: 1.7;
-        color: #334155;
-        margin-bottom: 2rem;
-      }
-      .bold-accent {
-        font-weight: 700;
-        color: #0f172a;
-      }
-      .section-heading {
-        font-size: 1.35rem;
-        font-weight: 700;
-        color: #0f172a;
-        margin-top: 2rem;
-        margin-bottom: 1rem;
-        padding-top: 1rem;
-        border-top: 1px solid #f1f5f9;
-      }
-      .callout {
-        background: #fffbeb;
-        border-left: 4px solid #f59e0b;
-        padding: 1rem 1.25rem;
-        border-radius: 8px;
-        margin: 1.5rem 0;
-        font-size: 0.95rem;
-        line-height: 1.6;
-      }
-      .track-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1.25rem;
-        margin-top: 1.5rem;
-      }
-      .track-card {
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 1.25rem;
-      }
-      .track-title {
-        font-weight: 700;
-        font-size: 0.95rem;
-        color: #166534;
         margin-bottom: 0.5rem;
         display: flex;
         align-items: center;
-        gap: 0.4rem;
+        justify-content: space-between;
       }
-      .track-desc {
-        font-size: 0.85rem;
-        color: #475569;
-        line-height: 1.5;
+      .card-career-title {
+        color: #16a34a !important;
       }
-
-      /* Job View Container */
-      .job-container {
-        display: none;
+      .page-card-career {
+        border-color: #bbf7d0;
+        background: linear-gradient(to right, #ffffff, #f0fdf4);
+      }
+      .page-card-career:hover {
+        border-color: #86efac;
+      }
+      .mode-badge {
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 9999px;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+      }
+      .badge-tutor {
+        background: #ffe4e6;
+        color: #9f1239;
+        border: 1px solid #fecdd3;
+      }
+      .badge-career {
+        background: #dcfce7;
+        color: #15803d;
+        border: 1px solid #bbf7d0;
+      }
+      .lead-description {
+        font-size: 0.925rem;
+        color: #64748b;
+        line-height: 1.6;
+        margin-bottom: 2rem;
       }
     </style>
   </head>
   <body>
-    <!-- Savanna LMS Host Navbar -->
-    <header class="host-header">
-      <div class="host-brand">
-        <div class="host-logo">S</div>
-        <div>
-          <div class="host-title">
-            <span>Savanna LMS Hub</span>
-            <span class="host-badge-online">• Online</span>
-          </div>
-          <div class="host-subtitle">Virtual Assistant Mastery Track</div>
+    <main class="hub-container">
+      <!-- Header Banner -->
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <div class="d-flex align-items-center gap-2">
+          <span class="badge bg-emerald-100 text-emerald-800 px-3 py-1.5 rounded-pill font-bold" style="background: #dcfce7; color: #166534; font-size: 0.75rem;">
+            ✨ Meri (መሪ) Assistant Active
+          </span>
+          <span class="text-body-secondary small">• Multilingual AI &amp; Career Companion</span>
         </div>
       </div>
 
-      <div class="host-controls">
-        <button id="toggle-view-btn" class="demo-switcher-btn" onclick="toggleView()">
-          Switch to Job Portal View 💼
-        </button>
+      <h1 class="h2 fw-bold text-dark mb-2">Savanna static pages</h1>
+      <p class="lead-description">
+        Three learner pages frozen from the local dev app, plus our integrated Career Gateway job portal.
+        The Meri assistant is embedded on every page, adapting its intelligence between <strong>Course Tutor</strong>
+        and <strong>Career Coach</strong> depending on where you navigate.
+      </p>
+
+      <!-- 4 Target Cards -->
+      <div class="vstack gap-3">
+        <!-- 1. Paced Homepage -->
+        <a href="pages/homepage-v1-paced.html" class="page-card-item">
+          <div class="card-link-title">
+            <span>Learner homepage — v1 paced</span>
+            <span class="mode-badge badge-tutor">🎓 Course Tutor Mode</span>
+          </div>
+          <p class="text-body-secondary mb-0" style="font-size: 0.9rem; line-height: 1.55;">
+            Björn Sibanda, week 10 of <strong>WR 100: Fundamentals of Effective Communication</strong>
+            (cohort F26-SEM-16W, 31 Aug – 20 Dec 2026). Courses dropdown, a week strip with all 16 weeks
+            preloaded, “continue where you left off”, immediate deliverables, period progress, overall score and upcoming events.
+          </p>
+        </a>
+
+        <!-- 2. Self-Paced Homepage -->
+        <a href="pages/homepage-v1-self-paced.html" class="page-card-item">
+          <div class="card-link-title">
+            <span>Learner homepage — v1 self-paced</span>
+            <span class="mode-badge badge-tutor">🎓 Course Tutor Mode</span>
+          </div>
+          <p class="text-body-secondary mb-0" style="font-size: 0.9rem; line-height: 1.55;">
+            Amara Nwosu, module 1 of 3 complete on <strong>VA-1: VA Foundations &amp; Professional Identity</strong>.
+            Course-progression gauge against the 70% graduation threshold, a working module switcher, the programme modal
+            preloaded, pacing boost and upcoming events.
+          </p>
+        </a>
+
+        <!-- 3. Concept Page with Navigation -->
+        <a href="pages/concept-with-navigation.html" class="page-card-item">
+          <div class="card-link-title">
+            <span>Concept page with curriculum navigation</span>
+            <span class="mode-badge badge-tutor">🎓 Course Tutor Mode</span>
+          </div>
+          <p class="text-body-secondary mb-0" style="font-size: 0.9rem; line-height: 1.55;">
+            “The Future of the VA Industry” — a module 2 concept with the navigation panel beside it, showing read,
+            current and unread activities, plus the full set of authored content blocks (callouts, card grids, comparison columns).
+            Meri reads this lesson directly, offering Amharic explanations and citations.
+          </p>
+        </a>
+
+        <!-- 4. Career Gateway: Tech Job Opportunities -->
+        <a href="pages/job-portal.html" class="page-card-item page-card-career">
+          <div class="card-link-title card-career-title">
+            <span>Career Gateway — Tech Job Opportunities</span>
+            <span class="mode-badge badge-career">💼 Career Coach Mode</span>
+          </div>
+          <p class="text-body-secondary mb-0" style="font-size: 0.9rem; line-height: 1.55;">
+            Curated employment opportunities for ALX graduates (Python, React, Virtual Operations, Flutter).
+            Demonstrates Meri in <strong>Career Coach mode</strong> with multi-role job board, schema.org job metadata,
+            skill match analysis, interview preparation, and the interview accommodations request modal.
+          </p>
+        </a>
       </div>
-    </header>
 
-    <!-- 1. COURSE VIEW (Savanna concept-with-navigation) -->
-    <main id="course-view" class="page-container">
-      <div class="breadcrumbs">
-        <span>Savanna LMS</span>
-        <span>›</span>
-        <span>VA-1: VA Foundations &amp; Professional Identity</span>
-        <span>›</span>
-        <span style="color: #0f172a; font-weight: 600">The Future of the VA Industry</span>
+      <!-- Footer Info -->
+      <div class="mt-4 pt-3 border-top d-flex justify-content-between align-items-center text-body-secondary small">
+        <span>Click any card to open that page with the live Meri (መሪ) assistant embedded.</span>
+        <span>Track 3: Multilingual Assistant &amp; Live Help</span>
       </div>
-
-      <article class="content-card" id="curriculum_navigation_content">
-        <div class="page-header-row">
-          <div>
-            <h1 class="page-title">The Future of the VA Industry</h1>
-            <p style="color: #64748b; font-size: 0.9rem; margin-top: 0.25rem">
-              Module 2 — Virtual Assistant Mastery
-            </p>
-          </div>
-          <span class="est-read">Est. 12 mins read</span>
-        </div>
-
-        <p class="lead-text">
-          <mark style="background: #fef08a; padding: 2px 4px; border-radius: 4px">
-            The Virtual Assistant profession is not shrinking. It is evolving.
-          </mark>
-          As businesses become more digital, more global, and more comfortable with remote collaboration,
-          the need for skilled support professionals continues to grow. At the same time, new technologies
-          like Artificial Intelligence are changing <span class="bold-accent">how</span> support work gets
-          done and <span class="bold-accent">what clients will value most</span> in the years ahead.
-        </p>
-
-        <!-- Section 2 matching design -->
-        <h2 class="section-heading" id="section-2-an-important-distinction">
-          Section 2: An Important Distinction
-        </h2>
-        <div class="callout">
-          <strong>⚠️ An Important Distinction:</strong>
-          Virtual Assistant can mean two different things. In some reports, a “virtual assistant” refers to
-          <span class="bold-accent">AI software assistants</span> such as chatbots, voice assistants, and
-          digital agents. In other contexts, it refers to
-          <span class="bold-accent">human remote professionals</span> who provide business support online.
-          The future of the industry includes both, and increasingly, they will work together.
-        </div>
-
-        <p style="line-height: 1.6; color: #334155">
-          While General Virtual Assistants handle broad administrative, scheduling, and email triage workloads,
-          Specialized Virtual Assistants focus on domain niches such as Executive Operations, customer analytics,
-          and workflow automation.
-        </p>
-
-        <div class="track-grid">
-          <div class="track-card">
-            <div class="track-title">🌱 General Track</div>
-            <div class="track-desc">
-              Calendar curation, inbox management, client communication, and travel preparation.
-            </div>
-          </div>
-          <div class="track-card">
-            <div class="track-title">🚀 Specialized Track</div>
-            <div class="track-desc">
-              Executive automation, customer analytics, data operations, and CRM administration.
-            </div>
-          </div>
-        </div>
-      </article>
     </main>
 
-    <!-- 2. JOB VIEW (Career Gateway) -->
-    <main id="job-view" class="page-container job-container">
-      <div class="breadcrumbs">
-        <span>ALX Career Gateway</span>
-        <span>›</span>
-        <span>Tech Opportunities</span>
-        <span>›</span>
-        <span style="color: #0f172a; font-weight: 600">Junior Python Developer</span>
-      </div>
-
-      <!-- Schema.org JobPosting structured data -->
-      <script type="application/ld+json">
-        {
-          "@context": "https://schema.org/",
-          "@type": "JobPosting",
-          "title": "Junior Python Developer",
-          "description": "Develop and maintain robust web applications, REST APIs, and backend services.",
-          "hiringOrganization": {
-            "@type": "Organization",
-            "name": "Safaricom Tech / Example Partner"
-          },
-          "skills": ["Python", "Django", "React", "REST APIs", "SQL"]
-        }
-      </script>
-
-      <article class="content-card job-detail">
-        <div class="page-header-row">
-          <div>
-            <h1 class="page-title">Junior Python Developer</h1>
-            <p style="color: #166534; font-weight: 600; margin-top: 0.25rem">
-              Safaricom Tech / Example Partner • Addis Ababa (Hybrid)
-            </p>
-          </div>
-          <span class="est-read" style="background: #e0e7ff; color: #3730a3">Full-time • Tech</span>
-        </div>
-
-        <p class="lead-text">
-          We are seeking an ambitious Junior Python Developer who is passionate about building accessible web
-          platforms and RESTful services. You will collaborate directly with engineering teams across Africa.
-        </p>
-
-        <h2 class="section-heading">Required Competencies</h2>
-        <ul style="line-height: 1.8; color: #334155">
-          <li><strong>Python &amp; Django:</strong> Writing clean, testable code and endpoints.</li>
-          <li><strong>Frontend Integration:</strong> Working with React and modern UI components.</li>
-          <li><strong>REST APIs:</strong> Designing secure authentication and structured JSON payloads.</li>
-          <li><strong>Bilingual Communication:</strong> Fluency in English and Amharic is an asset.</li>
-        </ul>
-
-        <div class="callout" style="background: #f0fdf4; border-left-color: #16a34a">
-          <strong>Inclusive Employer:</strong>
-          Interview accommodations are actively available upon request (Amharic translation, extended
-          assessment time, or accessible test formats).
-        </div>
-      </article>
-    </main>
-
-    <!-- View switcher script -->
-    <script>
-      function toggleView() {
-        const courseView = document.getElementById('course-view');
-        const jobView = document.getElementById('job-view');
-        const btn = document.getElementById('toggle-view-btn');
-
-        if (courseView.style.display === 'none') {
-          courseView.style.display = 'block';
-          jobView.style.display = 'none';
-          btn.innerText = 'Switch to Job Portal View 💼';
-          window.history.pushState({}, '', '/');
-        } else {
-          courseView.style.display = 'none';
-          jobView.style.display = 'block';
-          btn.innerText = 'Switch to Savanna Course View 🎓';
-          window.history.pushState({}, '', '/jobs/junior-python-developer');
-        }
-      }
-    </script>
-
-    <!-- Meri Embeddable Plugin Entrypoint -->
-    <script type="module" src="/src/main.tsx" data-public-key="savanna-dev-01" async></script>
+    <!-- Meri (መሪ) Multilingual AI Assistant Plugin -->
+    <script type="module" src="/src/main.tsx"></script>
+    <script src="dist/meri.js" data-public-key="savanna-dev-01" async></script>
   </body>
 </html>
