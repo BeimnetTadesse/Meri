@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, Minus, X, Volume2, UserCheck } from 'lucide-react';
+import { Sparkles, Minus, X, Volume2, VolumeX, UserCheck } from 'lucide-react';
 import { Language, PlatformConfig } from '../types';
 
 interface HeaderProps {
@@ -84,20 +84,26 @@ export const Header: React.FC<HeaderProps> = ({
           </span>
         </button>
 
-        {/* Read-Aloud / Audio button (respects voice toggle) */}
+        {/* Read-Aloud / Audio button (respects voice toggle & instant TTS stop) */}
         {allowVoice && (
           <button
             onClick={onToggleAudio}
-            title={isSpeaking ? 'ድምጽ አቁም' : 'ድምጽ አሰማ (Read Aloud)'}
-            style={{
-              backgroundColor: isSpeaking ? `${primaryColor}20` : undefined,
-              color: isSpeaking ? primaryColor : undefined,
-            }}
+            title={isSpeaking ? (language === 'am' ? 'ድምጽ አቁም' : 'Stop speaking') : (language === 'am' ? 'ድምጽ አሰማ' : 'Read aloud')}
+            style={
+              !isSpeaking
+                ? undefined
+                : {
+                    backgroundColor: '#ffe4e6',
+                    color: '#be123c',
+                  }
+            }
             className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
-              isSpeaking ? 'animate-pulse' : 'text-slate-600 hover:bg-slate-100'
+              isSpeaking
+                ? 'bg-rose-100 text-rose-700 animate-pulse'
+                : 'text-slate-600 hover:bg-slate-100'
             }`}
           >
-            <Volume2 className="w-4 h-4" />
+            {isSpeaking ? <VolumeX className="w-4 h-4 text-rose-600" /> : <Volume2 className="w-4 h-4" />}
           </button>
         )}
 
