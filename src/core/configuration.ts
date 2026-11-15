@@ -61,13 +61,18 @@ export async function fetchPlatformConfig(publicKey?: string): Promise<PlatformC
   const url = `${apiBase}/api/v1/plugin/config/${encodeURIComponent(publicKey)}`;
 
   try {
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timeoutId = controller ? setTimeout(() => controller.abort(), 3500) : null;
+
     const res = await fetch(url, {
+      signal: controller?.signal,
       cache: 'no-store',
       headers: {
         Accept: 'application/json',
         'Cache-Control': 'no-cache',
       },
     });
+    if (timeoutId) clearTimeout(timeoutId);
     if (res.ok) {
       const data = await res.json();
       return {

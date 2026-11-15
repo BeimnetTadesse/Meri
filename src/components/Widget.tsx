@@ -19,7 +19,7 @@ interface WidgetProps {
   config?: PlatformConfig;
 }
 
-export const Widget: React.FC<WidgetProps> = ({ publicKey, config: initialConfig }) => {
+export const Widget: React.FC<WidgetProps> = ({ publicKey, shadowRoot, config: initialConfig }) => {
   const [liveConfig, setLiveConfig] = useState<PlatformConfig | undefined>(initialConfig);
   const [isOpen, setIsOpen] = useState(false);
   const [language, setLanguage] = useState<Language>(initialConfig?.language || 'en');
@@ -162,6 +162,43 @@ export const Widget: React.FC<WidgetProps> = ({ publicKey, config: initialConfig
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages, isOpen]);
+
+  // Global Meri Window Events & Bridge
+  useEffect(() => {
+    const handleOpen = () => setIsOpen(true);
+    const handleClose = () => setIsOpen(false);
+    const handleToggle = () => setIsOpen((prev) => !prev);
+    const handleAskEvent = (e: Event) => {
+      const customEvt = e as CustomEvent<{ text?: string }>;
+      setIsOpen(true);
+      if (customEvt.detail?.text) {
+        handleSendMessage(customEvt.detail.text);
+      }
+    };
+
+    window.addEventListener('meri:open', handleOpen);
+    window.addEventListener('meri:close', handleClose);
+    window.addEventListener('meri:toggle', handleToggle);
+    window.addEventListener('meri:ask', handleAskEvent);
+
+    (window as unknown as { Meri?: object }).Meri = {
+      open: handleOpen,
+      close: handleClose,
+      toggle: handleToggle,
+      ask: (text: string) => {
+        setIsOpen(true);
+        handleSendMessage(text);
+      },
+      shadowRoot,
+    };
+
+    return () => {
+      window.removeEventListener('meri:open', handleOpen);
+      window.removeEventListener('meri:close', handleClose);
+      window.removeEventListener('meri:toggle', handleToggle);
+      window.removeEventListener('meri:ask', handleAskEvent);
+    };
+  }, [shadowRoot]);
 
   const handleRefreshContext = () => {
     const updated = extractPageContext();
