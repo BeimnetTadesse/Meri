@@ -1,219 +1,652 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Meri (መሪ) Assistant Plugin — Dev Sandbox</title>
+    <title>Meri (መሪ) — Context-Aware Multilingual AI Assistant</title>
+    <meta name="description" content="Embeddable context-aware AI learning companion and career gateway widget for LMS platforms and universities." />
+    
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Ethiopic:wght@400;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Ethiopic:wght@400;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
-    <style>
-      :root {
-        --bg-color: #f8fafc;
-        --card-bg: #ffffff;
-        --text-main: #0f172a;
-        --text-muted: #64748b;
-        --border-color: #e2e8f0;
-        --primary: #16a34a;
+
+    <!-- Tailwind CSS Play CDN for ultra-rich styling without bundle overhead -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Plus Jakarta Sans', 'Inter', 'system-ui', 'sans-serif'],
+              ethiopic: ['Noto Sans Ethiopic', 'sans-serif'],
+              mono: ['JetBrains Mono', 'monospace'],
+            },
+            colors: {
+              brand: {
+                50: '#f0fdf4',
+                100: '#dcfce7',
+                200: '#bbf7d0',
+                300: '#86efac',
+                400: '#4ade80',
+                500: '#22c55e',
+                600: '#16a34a',
+                700: '#15803d',
+                800: '#166534',
+                900: '#14532d',
+                950: '#052e16',
+              },
+              lime: {
+                400: '#a3e635',
+                500: '#84cc16',
+                600: '#65a30d',
+              }
+            }
+          }
+        }
       }
-      * { box-sizing: border-box; margin: 0; padding: 0; }
-      body {
-        font-family: 'Inter', system-ui, -apple-system, sans-serif;
-        background-color: var(--bg-color);
-        color: var(--text-main);
-        padding: 2.5rem 1.5rem 6rem 1.5rem;
-        line-height: 1.6;
-      }
-      .sandbox-container {
-        max-width: 54rem;
-        margin: 0 auto;
-      }
-      .header-badge {
-        display: inline-block;
-        background: #dcfce7;
-        color: #15803d;
-        font-size: 0.8rem;
-        font-weight: 700;
-        padding: 0.25rem 0.75rem;
-        border-radius: 9999px;
-        margin-bottom: 0.75rem;
-      }
-      h1 {
-        font-size: 2rem;
-        font-weight: 800;
-        color: #0f172a;
-        margin-bottom: 0.5rem;
-      }
-      .subtitle {
-        color: var(--text-muted);
-        font-size: 1.05rem;
-        margin-bottom: 2rem;
-      }
-      .card {
-        background: var(--card-bg);
-        border: 1px solid var(--border-color);
-        border-radius: 1rem;
-        padding: 1.75rem;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
-      }
-      .card-title {
-        font-size: 1.15rem;
-        font-weight: 700;
-        margin-bottom: 0.75rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-      }
-      .code-box {
-        background: #0f172a;
-        color: #38bdf8;
-        padding: 1rem 1.25rem;
-        border-radius: 0.75rem;
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-        font-size: 0.875rem;
-        overflow-x: auto;
-        margin-top: 0.75rem;
-      }
-      .code-box span { color: #f1f5f9; }
-      .pill {
-        display: inline-block;
-        background: #f1f5f9;
-        color: #475569;
-        font-size: 0.75rem;
-        font-weight: 600;
-        padding: 0.2rem 0.5rem;
-        border-radius: 0.375rem;
-        margin-right: 0.25rem;
-      }
-      .btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        background: var(--primary);
-        color: #ffffff;
-        font-weight: 600;
-        font-size: 0.9rem;
-        padding: 0.6rem 1.25rem;
-        border-radius: 0.5rem;
-        border: none;
-        cursor: pointer;
-        text-decoration: none;
-      }
-      .btn:hover { background: #15803d; }
-      .demo-section {
-        background: #f0fdf4;
-        border: 1px dashed #86efac;
-        border-radius: 0.75rem;
-        padding: 1.25rem;
-        margin-top: 1rem;
-      }
-    </style>
+    </script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
 
     <!-- Schema.org JobPosting structured data for testing Career Coach mode -->
     <script id="job-schema-json" type="application/ld+json">
       {
         "@context": "https://schema.org/",
         "@type": "JobPosting",
-        "title": "Junior Python Developer",
+        "title": "Junior Python & Backend Specialist",
         "description": "Build high-performance REST APIs and database models using Python, FastAPI, and PostgreSQL.",
         "hiringOrganization": {
           "@type": "Organization",
-          "name": "Tech Innovators Africa"
+          "name": "Safaricom Tech / Example Partner"
         },
-        "skills": ["Python", "FastAPI", "PostgreSQL", "Docker", "Git"]
+        "skills": ["Python", "FastAPI", "PostgreSQL", "Docker", "Git", "REST APIs"]
       }
     </script>
-  </head>
-  <body>
-    <div class="sandbox-container">
-      <span class="header-badge">🔌 Standalone Plugin UI Sandbox</span>
-      <h1>Meri (መሪ) Assistant Plugin</h1>
-      <p class="subtitle">
-        Isolated development testbench for the embeddable multilingual AI learning companion and career gateway widget.
-        Any host platform (LMS, university portal, or job board) integrates Meri with a single script tag.
-      </p>
 
-      <!-- Section 1: Integration Snippet -->
-      <div class="card">
-        <h2 class="card-title">📦 How to Embed on Any Website</h2>
-        <p style="color: var(--text-muted); font-size: 0.95rem;">
-          Add this script tag right before the closing <code>&lt;/body&gt;</code> tag on any website:
-        </p>
-        <div class="code-box">
-&lt;!-- Meri (መሪ) Multilingual AI Assistant Plugin --&gt;<br />
-&lt;script 
-  <span>src="https://your-domain.com/dist/meri.js"</span> 
-  <span>data-public-key="pk_live_savanna_sample_12345"</span> 
-  <span>async</span>
-&gt;&lt;/script&gt;
+    <style>
+      .glow-mesh {
+        background-image: 
+          radial-gradient(at 15% 15%, rgba(34, 197, 94, 0.18) 0px, transparent 55%),
+          radial-gradient(at 85% 25%, rgba(132, 204, 22, 0.14) 0px, transparent 50%),
+          radial-gradient(at 50% 85%, rgba(16, 185, 129, 0.12) 0px, transparent 60%);
+      }
+      .glass-nav {
+        background: rgba(15, 23, 42, 0.78);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+      }
+      .glass-card {
+        background: rgba(255, 255, 255, 0.04);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .glass-card:hover {
+        border-color: rgba(74, 222, 128, 0.3);
+        box-shadow: 0 10px 30px -10px rgba(34, 197, 94, 0.15);
+      }
+    </style>
+  </head>
+  <body class="bg-slate-950 text-slate-100 antialiased selection:bg-brand-500 selection:text-slate-950 min-h-screen">
+
+    <!-- Sticky Modern Header Bar -->
+    <header class="sticky top-0 z-50 glass-nav border-b border-slate-800/80">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
+        
+        <!-- Brand Logo -->
+        <a href="#" class="flex items-center gap-3 group">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 via-brand-500 to-lime-400 p-0.5 shadow-lg shadow-brand-500/20 group-hover:scale-105 transition-all">
+            <div class="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
+              <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 to-lime-300 font-extrabold text-lg">መ</span>
+            </div>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-extrabold text-lg tracking-tight text-white">Meri</span>
+              <span class="text-xs font-ethiopic font-semibold text-brand-400 bg-brand-950/80 border border-brand-800/60 px-1.5 py-0.5 rounded-md">መሪ</span>
+            </div>
+            <p class="text-[10px] text-slate-400 font-medium tracking-wide">Context-Aware AI Plugin</p>
+          </div>
+        </a>
+
+        <!-- Desktop Navigation Links -->
+        <nav class="hidden md:flex items-center gap-8 text-sm font-medium text-slate-300">
+          <a href="#sandbox" class="hover:text-brand-400 transition-colors">Interactive Sandbox</a>
+          <a href="#features" class="hover:text-brand-400 transition-colors">Capabilities</a>
+          <a href="#integration" class="hover:text-brand-400 transition-colors">SDK Embed</a>
+          <a href="https://savana-three.vercel.app/" target="_blank" class="hover:text-white transition-colors flex items-center gap-1.5">
+            <span>Savanna LMS</span>
+            <i data-lucide="external-link" class="w-3.5 h-3.5 text-slate-500"></i>
+          </a>
+        </nav>
+
+        <!-- Action Buttons -->
+        <div class="flex items-center gap-3">
+          <a
+            href="https://meri-back.onrender.com/"
+            target="_blank"
+            class="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-300 hover:text-white bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 transition"
+          >
+            <i data-lucide="shield" class="w-3.5 h-3.5 text-brand-400"></i>
+            <span>Admin Hub</span>
+          </a>
+          <button
+            onclick="triggerWidgetOpen()"
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-gradient-to-r from-brand-500 to-lime-500 hover:from-brand-400 hover:to-lime-400 text-slate-950 shadow-lg shadow-brand-500/25 transition-all hover:shadow-brand-500/40 active:scale-95"
+          >
+            <i data-lucide="message-square" class="w-4 h-4"></i>
+            <span>Open Widget</span>
+          </button>
         </div>
       </div>
+    </header>
 
-      <!-- Section 2: Active Lesson DOM Sandbox -->
-      <div class="card">
-        <h2 class="card-title">📖 Simulated Course Lesson Sandbox</h2>
-        <p style="color: var(--text-muted); font-size: 0.95rem;">
-          Meri automatically inspects <code>#curriculum_navigation_content</code> to extract lesson context and ground answers with exact citations.
+    <!-- HERO SECTION -->
+    <section class="relative pt-20 pb-16 overflow-hidden glow-mesh">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+        
+        <!-- Live Status Pill -->
+        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/90 border border-brand-500/30 text-brand-300 text-xs font-semibold mb-6 shadow-md shadow-brand-950">
+          <span class="w-2 h-2 rounded-full bg-brand-400 animate-pulse"></span>
+          <span>Next-Generation Multilingual AI Plugin</span>
+          <span class="text-slate-500">•</span>
+          <span class="text-lime-300 font-mono text-[11px]">v1.0.0 Production</span>
+        </div>
+
+        <!-- Main Headline -->
+        <h1 class="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white max-w-4xl mx-auto leading-tight sm:leading-tight">
+          Empower Every Learner with an
+          <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 via-lime-300 to-teal-300">
+            Intelligent AI Companion
+          </span>
+        </h1>
+
+        <!-- Subtitle -->
+        <p class="mt-6 text-lg sm:text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed font-normal">
+          Meri (መሪ) inspects the student's active webpage in real-time, cites exact curriculum material, explains concepts in English or Amharic, and guides career applicants with interview accommodations.
         </p>
 
-        <!-- Simulated Lesson Container -->
-        <article id="curriculum_navigation_content" class="demo-section">
-          <h3 style="font-size: 1.2rem; font-weight: 700; color: #166534; margin-bottom: 0.5rem;">
-            Lesson: Introduction to Python Programming
-          </h3>
-          <p style="margin-bottom: 0.75rem;">
-            <strong>Section 1: What is Python?</strong> Python is a high-level, interpreted programming language known for its clear syntax and versatility. It powers data science, machine learning, and web backend development.
-          </p>
-          <p>
-            <strong>Section 2: Variables and Data Types:</strong> Variables store data in memory. Basic types include integers, floats, strings, and booleans. Python uses dynamic typing, meaning you do not need to declare types explicitly.
-          </p>
-        </article>
-      </div>
+        <!-- CTA Action Buttons -->
+        <div class="mt-10 flex flex-wrap items-center justify-center gap-4">
+          <a
+            href="#sandbox"
+            class="px-6 py-3.5 rounded-xl text-sm font-bold bg-brand-500 hover:bg-brand-400 text-slate-950 shadow-xl shadow-brand-500/25 transition-all flex items-center gap-2 hover:gap-3"
+          >
+            <span>Try Interactive Sandbox</span>
+            <i data-lucide="arrow-down" class="w-4 h-4"></i>
+          </a>
+          <button
+            onclick="copyEmbedCode(this)"
+            class="px-5 py-3.5 rounded-xl text-sm font-semibold text-slate-200 hover:text-white bg-slate-900/90 hover:bg-slate-800/90 border border-slate-700/80 flex items-center gap-2 transition"
+          >
+            <i data-lucide="code" class="w-4 h-4 text-brand-400"></i>
+            <span>Copy Embed Snippet</span>
+          </button>
+        </div>
 
-      <!-- Section 3: Career Gateway DOM Sandbox -->
-      <div class="card">
-        <h2 class="card-title">💼 Simulated Career Opportunity Sandbox</h2>
-        <p style="color: var(--text-muted); font-size: 0.95rem;">
-          When on pages with <code>JobPosting</code> structured metadata, Meri automatically switches to Career Coach mode, analyzing required skills and enabling interview accommodation requests.
-        </p>
-        <div class="demo-section" style="background: #eff6ff; border-color: #93c5fd;">
-          <h3 style="font-size: 1.15rem; font-weight: 700; color: #1e40af; margin-bottom: 0.25rem;">
-            Junior Python Developer — Tech Innovators Africa
-          </h3>
-          <p style="color: #475569; font-size: 0.9rem; margin-bottom: 0.5rem;">
-            Addis Ababa / Remote • Full-time
-          </p>
-          <div>
-            <span class="pill">Python</span>
-            <span class="pill">FastAPI</span>
-            <span class="pill">PostgreSQL</span>
-            <span class="pill">Docker</span>
-            <span class="pill">Git</span>
+        <!-- Metric Badges -->
+        <div class="mt-14 grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-4xl mx-auto text-left">
+          <div class="glass-card rounded-2xl p-4">
+            <div class="text-2xl font-black text-white">100%</div>
+            <div class="text-xs text-slate-400 font-medium mt-0.5">Grounded Context Retrieval</div>
+          </div>
+          <div class="glass-card rounded-2xl p-4">
+            <div class="text-2xl font-black text-brand-400">አማ / EN</div>
+            <div class="text-xs text-slate-400 font-medium mt-0.5">Bilingual & Simplified Mode</div>
+          </div>
+          <div class="glass-card rounded-2xl p-4">
+            <div class="text-2xl font-black text-lime-400">1 Script</div>
+            <div class="text-xs text-slate-400 font-medium mt-0.5">Zero-Config Plug-and-Play</div>
+          </div>
+          <div class="glass-card rounded-2xl p-4">
+            <div class="text-2xl font-black text-teal-400">&lt; 300 ms</div>
+            <div class="text-xs text-slate-400 font-medium mt-0.5">Ultra-Fast Hybrid AI Pipeline</div>
           </div>
         </div>
-      </div>
 
-      <!-- Section 4: Testing Actions -->
-      <div class="card" style="background: #fafafa;">
-        <h2 class="card-title">🧪 Try Meri Features Right Now</h2>
-        <p style="color: var(--text-muted); font-size: 0.92rem; margin-bottom: 1rem;">
-          Look at the bottom right corner of this screen: the floating <strong>Meri (መሪ) Launcher</strong> is active!
+      </div>
+    </section>
+
+    <!-- SECTION: INTERACTIVE SANDBOX & LIVE DOM INSPECTION -->
+    <section id="sandbox" class="py-16 bg-slate-900/60 border-y border-slate-800/70">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+          <div>
+            <div class="inline-flex items-center gap-2 text-brand-400 text-xs font-bold uppercase tracking-wider mb-2">
+              <i data-lucide="play-circle" class="w-4 h-4"></i>
+              <span>Live DOM Context Sandbox</span>
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-bold text-white">Test Real-Time Context Switching</h2>
+            <p class="text-sm text-slate-400 mt-1 max-w-xl">
+              Switch the active lesson or curriculum below. Meri automatically detects changes in DOM elements and updates its reasoning instantly.
+            </p>
+          </div>
+
+          <!-- Scenario Switcher Buttons -->
+          <div class="flex items-center gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-800">
+            <button
+              onclick="switchScenario('python')"
+              id="btn-scen-python"
+              class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-brand-500 text-slate-950 transition-all"
+            >
+              Lesson 1: Python
+            </button>
+            <button
+              onclick="switchScenario('fastapi')"
+              id="btn-scen-fastapi"
+              class="px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition-all"
+            >
+              Lesson 2: REST APIs
+            </button>
+            <button
+              onclick="switchScenario('career')"
+              id="btn-scen-career"
+              class="px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition-all"
+            >
+              Career: Job Posting
+            </button>
+          </div>
+        </div>
+
+        <!-- Simulated Active LMS Container (Targeted by Meri Context Extractor) -->
+        <div class="bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden shadow-2xl">
+          <!-- Fake LMS Browser Top Bar -->
+          <div class="bg-slate-900/90 px-4 py-3 border-b border-slate-800 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <div class="w-3 h-3 rounded-full bg-rose-500/80"></div>
+              <div class="w-3 h-3 rounded-full bg-amber-500/80"></div>
+              <div class="w-3 h-3 rounded-full bg-brand-500/80"></div>
+              <span id="fakeUrlBar" class="ml-2 text-xs font-mono text-slate-400 bg-slate-950 px-3 py-1 rounded-md border border-slate-800">
+                https://savana-three.vercel.app/pages/concept-with-navigation.html#python-basics
+              </span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-[11px] font-semibold text-brand-400 bg-brand-950/80 border border-brand-800/80 px-2 py-0.5 rounded-full flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-brand-400 animate-ping"></span>
+                <span>DOM Observed by Meri</span>
+              </span>
+            </div>
+          </div>
+
+          <!-- Dynamic Content Body -->
+          <div class="p-6 sm:p-8">
+            <article id="curriculum_navigation_content">
+              <!-- Content dynamically rendered via JavaScript below -->
+              <div id="scenarioContent">
+                <div class="flex items-center gap-2 text-xs font-bold text-brand-400 mb-2">
+                  <i data-lucide="book-open" class="w-4 h-4"></i>
+                  <span>WR 100: Fundamentals of Effective Computing • Week 10</span>
+                </div>
+                <h3 class="text-2xl font-bold text-white mb-3">Introduction to Python Programming</h3>
+                <div class="space-y-4 text-sm text-slate-300 leading-relaxed max-w-3xl">
+                  <p>
+                    <strong class="text-white">Section 1: Syntax & Core Philosophy.</strong> Python is an interpreted, high-level language emphasizing readability and developer productivity. It supports object-oriented, procedural, and functional programming paradigms.
+                  </p>
+                  <p>
+                    <strong class="text-white">Section 2: Dynamic Typing & Memory.</strong> Variables in Python are dynamically typed and garbage collected. Data types include integers, floats, strings, lists, dictionaries, and custom classes.
+                  </p>
+                  <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl font-mono text-xs text-brand-300">
+                    def calculate_learning_velocity(weeks_completed, deliverables):<br />
+                    &nbsp;&nbsp;&nbsp;&nbsp;return (deliverables / max(weeks_completed, 1)) * 100
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <!-- Guide Alert -->
+            <div class="mt-8 pt-6 border-t border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-brand-500/10 border border-brand-500/20 flex items-center justify-center text-brand-400 shrink-0">
+                  <i data-lucide="sparkles" class="w-5 h-5"></i>
+                </div>
+                <div class="text-xs text-slate-400">
+                  <strong class="text-white block font-semibold">Test it in the widget now:</strong>
+                  Click the launcher icon in the bottom-right corner and ask <em class="text-brand-300">"What is Section 1 about?"</em>
+                </div>
+              </div>
+              <button
+                onclick="triggerWidgetOpen()"
+                class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 text-brand-300 border border-brand-500/30 hover:border-brand-500/60 transition flex items-center gap-2 self-start sm:self-auto"
+              >
+                <span>Ask Meri About This Page</span>
+                <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SECTION: CORE CAPABILITIES -->
+    <section id="features" class="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-3xl mx-auto mb-16">
+        <span class="text-brand-400 font-bold text-xs uppercase tracking-wider">Engineered for Excellence</span>
+        <h2 class="text-3xl sm:text-4xl font-extrabold text-white mt-2">Built for Modern Educational Platforms</h2>
+        <p class="text-slate-400 text-sm sm:text-base mt-3">
+          Meri bridges the gap between learning management systems, diverse student languages, and early-career job placement.
         </p>
-        <ul style="padding-left: 1.25rem; font-size: 0.92rem; color: #334155; display: flex; flex-direction: column; gap: 0.4rem;">
-          <li>Click the launcher to open the floating chat widget.</li>
-          <li>Ask questions about Python: Meri will cite Section 1 or 2 from the lesson above.</li>
-          <li>Toggle language between <strong>English</strong> and <strong>Amharic (አማርኛ)</strong>.</li>
-          <li>Toggle <strong>Simple Mode (ቀላል ሁነታ)</strong> for beginner-friendly analogies.</li>
-          <li>Test Voice speech-to-text recording or read-aloud TTS.</li>
-        </ul>
       </div>
-    </div>
 
-    <!-- Live Meri Plugin entrypoint for Vite development -->
-    <script type="module" src="/src/main.tsx" data-public-key="pk_live_savanna_sample_12345"></script>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Feature 1 -->
+        <div class="glass-card rounded-2xl p-6 transition-all">
+          <div class="w-12 h-12 rounded-xl bg-brand-500/10 border border-brand-500/30 flex items-center justify-center text-brand-400 mb-5">
+            <i data-lucide="scan" class="w-6 h-6"></i>
+          </div>
+          <h3 class="text-lg font-bold text-white mb-2">Live DOM Context Extraction</h3>
+          <p class="text-sm text-slate-400 leading-relaxed">
+            Continuously monitors headings, paragraphs, code blocks, active week tabs, and navigation states without requiring custom backend integration.
+          </p>
+        </div>
+
+        <!-- Feature 2 -->
+        <div class="glass-card rounded-2xl p-6 transition-all">
+          <div class="w-12 h-12 rounded-xl bg-lime-500/10 border border-lime-500/30 flex items-center justify-center text-lime-400 mb-5">
+            <i data-lucide="languages" class="w-6 h-6"></i>
+          </div>
+          <h3 class="text-lg font-bold text-white mb-2">Bilingual Amharic (አማርኛ)</h3>
+          <p class="text-sm text-slate-400 leading-relaxed">
+            Native support for Ethiopian learners with culturally relevant technical explanations, voice text-to-speech, and simplified beginner analogies (ቀላል ሁነታ).
+          </p>
+        </div>
+
+        <!-- Feature 3 -->
+        <div class="glass-card rounded-2xl p-6 transition-all">
+          <div class="w-12 h-12 rounded-xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400 mb-5">
+            <i data-lucide="briefcase" class="w-6 h-6"></i>
+          </div>
+          <h3 class="text-lg font-bold text-white mb-2">Career Coach & Accommodations</h3>
+          <p class="text-sm text-slate-400 leading-relaxed">
+            Detects job postings, analyzes student skill readiness, and facilitates confidential interview accommodation requests for neurodivergent and disabled learners.
+          </p>
+        </div>
+
+        <!-- Feature 4 -->
+        <div class="glass-card rounded-2xl p-6 transition-all">
+          <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mb-5">
+            <i data-lucide="mic" class="w-6 h-6"></i>
+          </div>
+          <h3 class="text-lg font-bold text-white mb-2">Voice Speech-to-Text & Audio</h3>
+          <p class="text-sm text-slate-400 leading-relaxed">
+            Full hands-free voice questioning via Web Speech STT and high-clarity bilingual voice synthesis with configurable speech speed controls.
+          </p>
+        </div>
+
+        <!-- Feature 5 -->
+        <div class="glass-card rounded-2xl p-6 transition-all">
+          <div class="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 mb-5">
+            <i data-lucide="palette" class="w-6 h-6"></i>
+          </div>
+          <h3 class="text-lg font-bold text-white mb-2">Dynamic Multi-Tenant Theming</h3>
+          <p class="text-sm text-slate-400 leading-relaxed">
+            Platforms customize primary colors (lime, emerald, slate), branding titles, logos, and greeting copy live in the Admin Hub without recompiling frontend assets.
+          </p>
+        </div>
+
+        <!-- Feature 6 -->
+        <div class="glass-card rounded-2xl p-6 transition-all">
+          <div class="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 mb-5">
+            <i data-lucide="phone" class="w-6 h-6"></i>
+          </div>
+          <h3 class="text-lg font-bold text-white mb-2">Telegram Cross-Platform Sync</h3>
+          <p class="text-sm text-slate-400 leading-relaxed">
+            Learners verify phone numbers to access their studies, course updates, and career opportunities through the official @BridgeMateBot on Telegram.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION: SDK EMBED CODE -->
+    <section id="integration" class="py-20 bg-slate-900/60 border-t border-slate-800/80">
+      <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="text-center max-w-2xl mx-auto mb-12">
+          <span class="text-brand-400 font-bold text-xs uppercase tracking-wider">Fast Integration</span>
+          <h2 class="text-3xl font-bold text-white mt-1">Embed on Any Platform in 1 Minute</h2>
+          <p class="text-slate-400 text-sm mt-2">
+            No framework lock-in. Works seamlessly on HTML, WordPress, Moodle, Canvas, React, Angular, or Vue.
+          </p>
+        </div>
+
+        <div class="bg-slate-950 rounded-2xl border border-slate-800 shadow-2xl overflow-hidden">
+          <!-- Code Block Header -->
+          <div class="bg-slate-900/90 px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <i data-lucide="code-2" class="w-5 h-5 text-brand-400"></i>
+              <span class="font-mono text-xs font-semibold text-slate-300">HTML Script Embed Tag</span>
+            </div>
+            <button
+              onclick="copySnippetText(this)"
+              class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 flex items-center gap-1.5 transition"
+            >
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+              <span>Copy Code</span>
+            </button>
+          </div>
+
+          <!-- Code Snippet -->
+          <div class="p-6 overflow-x-auto font-mono text-xs sm:text-sm text-slate-300 leading-relaxed">
+            <pre id="embedCodeText"><span class="text-slate-500">&lt;!-- Meri (መሪ) Multilingual AI Assistant Plugin --&gt;</span>
+<span class="text-brand-400">&lt;script</span>
+  <span class="text-lime-300">src</span>=<span class="text-emerald-300">"https://meri-plugin.vercel.app/meri.js"</span>
+  <span class="text-lime-300">data-public-key</span>=<span class="text-emerald-300">"pk_live_savanna_sample_12345"</span>
+  <span class="text-lime-300">data-api-base</span>=<span class="text-emerald-300">"https://meri-back.onrender.com"</span>
+  <span class="text-lime-300">async</span>
+<span class="text-brand-400">&gt;&lt;/script&gt;</span></pre>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SECTION: LIVE ECOSYSTEM HUB -->
+    <section class="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-2xl mx-auto mb-12">
+        <h2 class="text-2xl sm:text-3xl font-bold text-white">Live Production Ecosystem</h2>
+        <p class="text-slate-400 text-sm mt-1">Directly explore the active deployed services in this deployment.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Card 1 -->
+        <a href="https://savana-three.vercel.app/" target="_blank" class="glass-card rounded-2xl p-6 group block transition">
+          <div class="flex items-center justify-between mb-4">
+            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-brand-950 text-brand-400 border border-brand-800">Host LMS Simulation</span>
+            <i data-lucide="arrow-up-right" class="w-4 h-4 text-slate-500 group-hover:text-brand-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all"></i>
+          </div>
+          <h3 class="text-lg font-bold text-white group-hover:text-brand-300 transition-colors">Savanna LMS Platform</h3>
+          <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+            Experience the student learning portal, week pacing navigation, curriculum modules, and interactive career board.
+          </p>
+          <span class="mt-4 font-mono text-[11px] text-brand-400 block truncate">https://savana-three.vercel.app</span>
+        </a>
+
+        <!-- Card 2 -->
+        <a href="https://meri-back.onrender.com/" target="_blank" class="glass-card rounded-2xl p-6 group block transition">
+          <div class="flex items-center justify-between mb-4">
+            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-950 text-blue-400 border border-blue-800">Admin & Governance</span>
+            <i data-lucide="arrow-up-right" class="w-4 h-4 text-slate-500 group-hover:text-blue-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all"></i>
+          </div>
+          <h3 class="text-lg font-bold text-white group-hover:text-blue-300 transition-colors">Meri Platform Hub (Render)</h3>
+          <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+            Sign in as SuperAdmin or Savanna Platform Admin to configure themes, upload courses, and manage support tickets.
+          </p>
+          <span class="mt-4 font-mono text-[11px] text-blue-400 block truncate">https://meri-back.onrender.com</span>
+        </a>
+
+        <!-- Card 3 -->
+        <div class="glass-card rounded-2xl p-6 block">
+          <div class="flex items-center justify-between mb-4">
+            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-purple-950 text-purple-400 border border-purple-800">CDN Endpoint</span>
+            <i data-lucide="globe" class="w-4 h-4 text-purple-400"></i>
+          </div>
+          <h3 class="text-lg font-bold text-white">Standalone Plugin CDN</h3>
+          <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+            High-speed worldwide Vercel Edge CDN distribution of the compiled standalone JavaScript bundle (<code class="text-lime-300">meri.js</code>).
+          </p>
+          <span class="mt-4 font-mono text-[11px] text-purple-400 block truncate">https://meri-plugin.vercel.app/meri.js</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="border-t border-slate-900 bg-slate-950 py-10 text-xs text-slate-500">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-2">
+          <span class="font-extrabold text-white text-sm">Meri <span class="text-brand-400">መሪ</span></span>
+          <span>• Context-Aware AI Learning & Career Gateway Assistant</span>
+        </div>
+        <div class="flex items-center gap-4 text-slate-400">
+          <span>FastAPI</span>
+          <span>•</span>
+          <span>React 18</span>
+          <span>•</span>
+          <span>Tailwind CSS</span>
+          <span>•</span>
+          <span>Groq & Gemini</span>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Interactive Scripts for Sandbox & Copying -->
+    <script>
+      lucide.createIcons();
+
+      const scenarios = {
+        python: {
+          url: 'https://savana-three.vercel.app/pages/concept-with-navigation.html#python-basics',
+          html: `
+            <div class="flex items-center gap-2 text-xs font-bold text-brand-400 mb-2">
+              <i data-lucide="book-open" class="w-4 h-4"></i>
+              <span>WR 100: Fundamentals of Effective Computing • Week 10</span>
+            </div>
+            <h3 class="text-2xl font-bold text-white mb-3">Introduction to Python Programming</h3>
+            <div class="space-y-4 text-sm text-slate-300 leading-relaxed max-w-3xl">
+              <p>
+                <strong class="text-white">Section 1: Syntax & Core Philosophy.</strong> Python is an interpreted, high-level language emphasizing readability and developer productivity. It supports object-oriented, procedural, and functional programming paradigms.
+              </p>
+              <p>
+                <strong class="text-white">Section 2: Dynamic Typing & Memory.</strong> Variables in Python are dynamically typed and garbage collected. Data types include integers, floats, strings, lists, dictionaries, and custom classes.
+              </p>
+              <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl font-mono text-xs text-brand-300">
+                def calculate_learning_velocity(weeks_completed, deliverables):<br />
+                &nbsp;&nbsp;&nbsp;&nbsp;return (deliverables / max(weeks_completed, 1)) * 100
+              </div>
+            </div>
+          `
+        },
+        fastapi: {
+          url: 'https://savana-three.vercel.app/pages/concept-with-navigation.html#rest-apis',
+          html: `
+            <div class="flex items-center gap-2 text-xs font-bold text-lime-400 mb-2">
+              <i data-lucide="layers" class="w-4 h-4"></i>
+              <span>BE 201: Modern Microservices Architecture • Week 4</span>
+            </div>
+            <h3 class="text-2xl font-bold text-white mb-3">Building Scalable REST APIs with FastAPI</h3>
+            <div class="space-y-4 text-sm text-slate-300 leading-relaxed max-w-3xl">
+              <p>
+                <strong class="text-white">Section 1: Asynchronous Execution.</strong> FastAPI utilizes Starlette and AnyIO for concurrent non-blocking I/O operations, ensuring high throughput under heavy network concurrency.
+              </p>
+              <p>
+                <strong class="text-white">Section 2: Data Validation with Pydantic.</strong> Request validation and OpenAPI documentation are automatically generated from Python type hints, catching invalid schemas before database operations.
+              </p>
+              <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl font-mono text-xs text-lime-300">
+                @app.get("/api/v1/learners/{learner_id}")<br />
+                async def get_learner_profile(learner_id: str, db: AsyncSession = Depends(get_db)):<br />
+                &nbsp;&nbsp;&nbsp;&nbsp;return await learner_service.retrieve(learner_id)
+              </div>
+            </div>
+          `
+        },
+        career: {
+          url: 'https://savana-three.vercel.app/pages/job-portal.html#junior-python-dev',
+          html: `
+            <div class="flex items-center gap-2 text-xs font-bold text-teal-400 mb-2">
+              <i data-lucide="briefcase" class="w-4 h-4"></i>
+              <span>Career Gateway • Safaricom Tech & Partner Network</span>
+            </div>
+            <h3 class="text-2xl font-bold text-white mb-3">Junior Python & Backend Specialist</h3>
+            <p class="text-xs text-slate-400 mb-4">Addis Ababa (Hybrid) • Full-Time • Posted Recently</p>
+            <div class="space-y-4 text-sm text-slate-300 leading-relaxed max-w-3xl">
+              <p>
+                <strong class="text-white">Opportunity Overview:</strong> Join an engineering squad developing mobile money, real-time telemetry, and resilient microservices.
+              </p>
+              <p>
+                <strong class="text-white">Required Skills:</strong> Python 3.11+, FastAPI, PostgreSQL, Git, Docker, and REST API design.
+              </p>
+              <p>
+                <strong class="text-white">Accommodations Notice:</strong> Meri provides confidential interview accommodation request routing directly to recruiters for neurodivergent and mobility-impaired candidates.
+              </p>
+            </div>
+          `
+        }
+      };
+
+      function switchScenario(key) {
+        const item = scenarios[key];
+        if (!item) return;
+
+        document.getElementById('fakeUrlBar').textContent = item.url;
+        document.getElementById('scenarioContent').innerHTML = item.html;
+
+        const btns = ['python', 'fastapi', 'career'];
+        btns.forEach(b => {
+          const el = document.getElementById('btn-scen-' + b);
+          if (b === key) {
+            el.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold bg-brand-500 text-slate-950 transition-all';
+          } else {
+            el.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition-all';
+          }
+        });
+
+        lucide.createIcons();
+
+        // Dispatch a custom event so if the live widget is loaded, it triggers re-extraction
+        window.dispatchEvent(new CustomEvent('meri:context-updated'));
+      }
+
+      function triggerWidgetOpen() {
+        // Try triggering open via launcher button or synthetic event
+        const launcher = document.querySelector('button[aria-label*="launcher" i], button[title*="launcher" i], #meri-launcher');
+        if (launcher) {
+          launcher.click();
+        } else {
+          // If in dev mode, dispatch an open event
+          window.dispatchEvent(new CustomEvent('meri:toggle'));
+        }
+      }
+
+      function copySnippetText(btn) {
+        const code = `<!-- Meri (መሪ) Multilingual AI Assistant Plugin -->
+<script
+  src="https://meri-plugin.vercel.app/meri.js"
+  data-public-key="pk_live_savanna_sample_12345"
+  data-api-base="https://meri-back.onrender.com"
+  async
+></script>`;
+        navigator.clipboard.writeText(code).then(() => {
+          const oldHtml = btn.innerHTML;
+          btn.innerHTML = '<i data-lucide="check" class="w-3.5 h-3.5 text-brand-400"></i><span class="text-brand-300">Copied!</span>';
+          lucide.createIcons();
+          setTimeout(() => {
+            btn.innerHTML = oldHtml;
+            lucide.createIcons();
+          }, 2500);
+        });
+      }
+
+      function copyEmbedCode(btn) {
+        copySnippetText(btn);
+      }
+    </script>
+
+    <!-- Live Meri Plugin entrypoint for Vite development & production bundle testing -->
+    <script type="module" src="/src/main.tsx" data-public-key="pk_live_savanna_sample_12345" data-api-base="https://meri-back.onrender.com"></script>
   </body>
 </html>
