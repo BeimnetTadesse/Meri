@@ -623,13 +623,7 @@
       }
 
       function copySnippetText(btn) {
-        const code = `<!-- Meri (መሪ) Multilingual AI Assistant Plugin -->
-<script
-  src="https://meri-plugin.vercel.app/meri.js"
-  data-public-key="pk_live_savanna_sample_12345"
-  data-api-base="https://meri-back.onrender.com"
-  async
-></script>`;
+        const code = `<script\n  src="https://meri-plugin.vercel.app/meri.js"\n  data-public-key="pk_live_savanna_sample_12345"\n  data-api-base="https://meri-back.onrender.com"\n  async\n><\/script>`;
         navigator.clipboard.writeText(code).then(() => {
           const oldHtml = btn.innerHTML;
           btn.innerHTML = '<i data-lucide="check" class="w-3.5 h-3.5 text-brand-400"></i><span class="text-brand-300">Copied!</span>';
