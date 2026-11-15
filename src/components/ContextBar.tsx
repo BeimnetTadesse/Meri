@@ -1,6 +1,6 @@
 import React from 'react';
 import { RefreshCw, BookOpen, GraduationCap, Briefcase, FileText, Send, Globe } from 'lucide-react';
-import { PageContext, Language } from '../types';
+import { PageContext, Language, PlatformConfig } from '../types';
 
 interface ContextBarProps {
   context: PageContext;
@@ -8,6 +8,7 @@ interface ContextBarProps {
   simpleMode: boolean;
   onToggleSimpleMode: () => void;
   language: Language;
+  config?: PlatformConfig;
 }
 
 export const ContextBar: React.FC<ContextBarProps> = ({
@@ -16,7 +17,9 @@ export const ContextBar: React.FC<ContextBarProps> = ({
   simpleMode,
   onToggleSimpleMode,
   language,
+  config,
 }) => {
+  const allowSimpleMode = config?.features?.simple_mode !== false;
   const getBadge = () => {
     switch (context.pageType) {
       case 'lesson':
@@ -73,19 +76,21 @@ export const ContextBar: React.FC<ContextBarProps> = ({
         <RefreshCw className="w-3 h-3 text-slate-400 group-hover:rotate-180 transition-transform duration-300 shrink-0 ml-auto" />
       </button>
 
-      {/* Simple Mode Toggle */}
-      <button
-        onClick={onToggleSimpleMode}
-        title={simpleMode ? 'ቀላል ሁነታ በርቷል (Simple Mode On)' : 'ወደ ቀላል ሁነታ ቀይር (Switch to Simple Mode)'}
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold border transition-all shrink-0 shadow-2xs ${
-          simpleMode
-            ? 'bg-purple-100 text-purple-900 border-purple-300 shadow-sm'
-            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
-        }`}
-      >
-        <BookOpen className={`w-3.5 h-3.5 ${simpleMode ? 'text-purple-700' : 'text-slate-500'}`} />
-        <span>{language === 'am' ? 'ቀላል ሁነታ' : 'Simple / ቀላል'}</span>
-      </button>
+      {/* Simple Mode Toggle (respects feature flag) */}
+      {allowSimpleMode && (
+        <button
+          onClick={onToggleSimpleMode}
+          title={simpleMode ? 'ቀላል ሁነታ በርቷል (Simple Mode On)' : 'ወደ ቀላል ሁነታ ቀይር (Switch to Simple Mode)'}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold border transition-all shrink-0 shadow-2xs ${
+            simpleMode
+              ? 'bg-purple-100 text-purple-900 border-purple-300 shadow-sm'
+              : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+          }`}
+        >
+          <BookOpen className={`w-3.5 h-3.5 ${simpleMode ? 'text-purple-700' : 'text-slate-500'}`} />
+          <span>{language === 'am' ? 'ቀላል ሁነታ' : 'Simple / ቀላል'}</span>
+        </button>
+      )}
     </div>
   );
 };

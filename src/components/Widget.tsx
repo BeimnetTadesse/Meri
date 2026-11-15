@@ -8,7 +8,7 @@ import { QuickActions } from './QuickActions';
 import { MessageInput } from './MessageInput';
 import { HumanHelpModal } from './HumanHelpModal';
 import { AccommodationsModal } from './AccommodationsModal';
-import { Language, Message, PageContext } from '../types';
+import { Language, Message, PageContext, PlatformConfig } from '../types';
 import { extractPageContext, initSpaContextTracking } from '../context/context-extractor';
 import { askMeriAI } from '../services/ai-service';
 import { SpeechService } from '../services/speech';
@@ -16,11 +16,13 @@ import { SpeechService } from '../services/speech';
 interface WidgetProps {
   publicKey?: string;
   shadowRoot?: ShadowRoot;
+  config?: PlatformConfig;
 }
 
-export const Widget: React.FC<WidgetProps> = ({ publicKey }) => {
+export const Widget: React.FC<WidgetProps> = ({ publicKey, config: initialConfig }) => {
+  const [liveConfig, setLiveConfig] = useState<PlatformConfig | undefined>(initialConfig);
   const [isOpen, setIsOpen] = useState(false);
-  const [language, setLanguage] = useState<Language>('en');
+  const [language, setLanguage] = useState<Language>(initialConfig?.language || 'en');
   const [simpleMode, setSimpleMode] = useState(false);
   const [voiceRate, setVoiceRate] = useState(1.0);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -39,12 +41,38 @@ export const Widget: React.FC<WidgetProps> = ({ publicKey }) => {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Sync config updates from live background sync
+  useEffect(() => {
+    if (initialConfig) {
+      setLiveConfig(initialConfig);
+    }
+  }, [initialConfig]);
+
+  useEffect(() => {
+    const handleConfigEvent = (e: Event) => {
+      const customEvent = e as CustomEvent<PlatformConfig>;
+      if (customEvent.detail) {
+        setLiveConfig(customEvent.detail);
+      }
+    };
+    window.addEventListener('meri:config-updated', handleConfigEvent);
+    return () => {
+      window.removeEventListener('meri:config-updated', handleConfigEvent);
+    };
+  }, []);
+
   const generateGreeting = (ctx: PageContext, lang: Language): string => {
+    const assistant = liveConfig?.branding?.assistant_name || `${liveConfig?.platform_name || 'Meri'} (መሪ)`;
+
+    if (liveConfig?.welcome_message && (ctx.pageType === 'general' || ctx.pageType === 'course')) {
+      return liveConfig.welcome_message;
+    }
+
     switch (ctx.pageType) {
       case 'job':
         return lang === 'am'
-          ? `ሰላም! እኔ መሪ (Meri)፣ የእርስዎ የስራ አሰልጣኝ ነኝ። የ"${ctx.jobTitle || 'ቴክኖሎጂ'}" የስራ እድልን ከእርስዎ ጋር እያየሁ ነው። ለቃለ-መጠይቅ ለመዘጋጀት፣ የክህሎት ብቃትዎን ለማወቅ ወይም የድጋፍ ጥያቄ ለማቅረብ እንዴት ልርዳዎት?`
-          : `ሰላም! I'm Meri (መሪ), your Career Coach for this ${ctx.jobTitle || 'Tech Opportunity'} role. I can check your qualification match, run mock interviews, or help request accommodations. How can I guide you today?`;
+          ? `ሰላም! እኔ ${assistant}፣ የእርስዎ የስራ አሰልጣኝ ነኝ። የ"${ctx.jobTitle || 'ቴክኖሎጂ'}" የስራ እድልን ከእርስዎ ጋር እያየሁ ነው። ለቃለ-መጠይቅ ለመዘጋጀት፣ የክህሎት ብቃትዎን ለማወቅ ወይም የድጋፍ ጥያቄ ለማቅረብ እንዴት ልርዳዎት?`
+          : `ሰላም! I'm ${assistant}, your Career Coach for this ${ctx.jobTitle || 'Tech Opportunity'} role. I can check your qualification match, run mock interviews, or help request accommodations. How can I guide you today?`;
 
       case 'assignment':
         return lang === 'am'
@@ -68,13 +96,16 @@ export const Widget: React.FC<WidgetProps> = ({ publicKey }) => {
 
       case 'lesson':
         return lang === 'am'
-          ? `ሰላም! እኔ መሪ (Meri)፣ የትምህርት አጋርዎ ነኝ። ይህንን የትምህርት ገጽ "${ctx.lessonName || ctx.title}" ከእርስዎ ጋር አንብቤዋለሁ። ዛሬ ምን ላስረዳዎት እችላለሁ?`
-          : `ሰላም! I'm Meri (መሪ), your AI study companion. I've read "${ctx.lessonName || ctx.title}" with you. How can I guide you through this lesson today?`;
+          ? `ሰላም! እኔ ${assistant}፣ የትምህርት አጋርዎ ነኝ። ይህንን የትምህርት ገጽ "${ctx.lessonName || ctx.title}" ከእርስዎ ጋር አንብቤዋለሁ። ዛሬ ምን ላስረዳዎት እችላለሁ?`
+          : `ሰላም! I'm ${assistant}, your AI study companion. I've read "${ctx.lessonName || ctx.title}" with you. How can I guide you through this lesson today?`;
 
       default:
-        return lang === 'am'
-          ? `ሰላም! እኔ መሪ (Meri) ነኝ። ይህንን ገጽ "${ctx.title}" እያየሁ ነው። ዛሬ እንዴት ልርዳዎት እችላለሁ?`
-          : `ሰላም! I'm Meri (መሪ), your AI learning and career guide. I'm active on "${ctx.title}". How can I guide you today?`;
+        return (
+          liveConfig?.welcome_message ||
+          (lang === 'am'
+            ? `ሰላም! እኔ ${assistant} ነኝ። ይህንን ገጽ "${ctx.title}" እያየሁ ነው። ዛሬ እንዴት ልርዳዎት እችላለሁ?`
+            : `ሰላም! I'm ${assistant}, your AI learning and career guide. I'm active on "${ctx.title}". How can I guide you today?`)
+        );
     }
   };
 
@@ -110,9 +141,9 @@ export const Widget: React.FC<WidgetProps> = ({ publicKey }) => {
     });
   }, []);
 
-  // Update greeting text if language changes while only greeting exists
+  // Update greeting text if liveConfig welcome message or language changes while only greeting exists
   useEffect(() => {
-    if (messages.length === 1 && messages[0].id === 'greeting') {
+    if (messages.length <= 1) {
       setMessages([
         {
           id: 'greeting',
@@ -123,7 +154,7 @@ export const Widget: React.FC<WidgetProps> = ({ publicKey }) => {
         },
       ]);
     }
-  }, [language]);
+  }, [language, liveConfig?.welcome_message, liveConfig?.platform_name, liveConfig?.branding?.assistant_name]);
 
   // Scroll to bottom
   useEffect(() => {
@@ -246,11 +277,15 @@ export const Widget: React.FC<WidgetProps> = ({ publicKey }) => {
       </div>
 
       {/* Docked Launcher when closed */}
-      <Launcher isOpen={isOpen} onToggle={() => setIsOpen(true)} unreadCount={messages.length <= 1 ? 1 : 0} />
+      <Launcher isOpen={isOpen} onToggle={() => setIsOpen(true)} unreadCount={messages.length <= 1 ? 1 : 0} config={liveConfig} />
 
       {/* Chat Window when open */}
       {isOpen && (
-        <div className="fixed bottom-6 right-6 z-[999999] w-[92vw] sm:w-[410px] h-[630px] max-h-[88vh] bg-white rounded-2xl shadow-2xl border border-slate-200/90 flex flex-col overflow-hidden animate-slide-up">
+        <div
+          className={`fixed bottom-6 ${
+            liveConfig?.position === 'bottom-left' || liveConfig?.position === 'top-left' ? 'left-6' : 'right-6'
+          } z-[999999] w-[92vw] sm:w-[410px] h-[630px] max-h-[88vh] bg-white rounded-2xl shadow-2xl border border-slate-200/90 flex flex-col overflow-hidden animate-slide-up`}
+        >
           {/* Header */}
           <Header
             language={language}
@@ -260,6 +295,7 @@ export const Widget: React.FC<WidgetProps> = ({ publicKey }) => {
             onOpenLiveHelp={() => setShowLiveHelp(true)}
             isSpeaking={isSpeaking}
             onToggleAudio={() => (isSpeaking ? handleStopSpeak() : handleSpeak(messages[messages.length - 1]?.text || ''))}
+            config={liveConfig}
           />
 
           {/* Context Bar */}
@@ -269,6 +305,7 @@ export const Widget: React.FC<WidgetProps> = ({ publicKey }) => {
             simpleMode={simpleMode}
             onToggleSimpleMode={() => setSimpleMode((s) => !s)}
             language={language}
+            config={liveConfig}
           />
 
           {/* Status / Accessibility Ribbon */}
@@ -316,6 +353,7 @@ export const Widget: React.FC<WidgetProps> = ({ publicKey }) => {
             isLoading={isLoading}
             isListening={isListening}
             onToggleListening={handleToggleListening}
+            config={liveConfig}
           />
         </div>
       )}

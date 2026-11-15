@@ -11,7 +11,7 @@ async function initMeri() {
   // Find host script tag
   const scripts = Array.from(document.querySelectorAll('script'));
   const targetScript = scripts.find((s) => s.src.includes('meri.js') || s.hasAttribute('data-public-key'));
-  const publicKey = targetScript?.getAttribute('data-public-key') || 'savanna-dev-01';
+  const publicKey = targetScript?.getAttribute('data-public-key') || 'pk_live_savanna_sample_12345';
 
   // 1. Create host element
   const host = document.createElement('div');
@@ -27,18 +27,35 @@ async function initMeri() {
   shadowRoot.appendChild(styleEl);
 
   // 4. Fetch dynamic configuration
-  const config = await fetchPlatformConfig(publicKey);
-  applyThemeVariables(host, config);
+  let currentConfig = await fetchPlatformConfig(publicKey);
+  applyThemeVariables(host, currentConfig);
 
   // 5. Mount React application inside Shadow DOM
   const mountPoint = document.createElement('div');
   mountPoint.id = 'meri-app-container';
+  applyThemeVariables(mountPoint, currentConfig);
   shadowRoot.appendChild(mountPoint);
 
   const root = createRoot(mountPoint);
-  root.render(<Widget publicKey={publicKey} shadowRoot={shadowRoot} />);
+  root.render(<Widget config={currentConfig} publicKey={publicKey} shadowRoot={shadowRoot} />);
 
-  console.log('[Meri] Assistant successfully initialized on host website.');
+  // 6. Live Auto-Sync: Re-fetch configuration on window focus and periodic interval
+  const syncConfig = async () => {
+    try {
+      const freshConfig = await fetchPlatformConfig(publicKey);
+      currentConfig = freshConfig;
+      applyThemeVariables(host, freshConfig);
+      applyThemeVariables(mountPoint, freshConfig);
+      window.dispatchEvent(new CustomEvent('meri:config-updated', { detail: freshConfig }));
+    } catch {
+      // Ignore background sync errors
+    }
+  };
+
+  window.addEventListener('focus', syncConfig);
+  setInterval(syncConfig, 10000);
+
+  console.log('[Meri] Assistant successfully initialized on host website with key:', publicKey);
 }
 
 if (document.readyState === 'loading') {

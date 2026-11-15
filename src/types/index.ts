@@ -40,23 +40,27 @@ export interface PlatformConfig {
   platform_name: string;
   theme: {
     primary: string;
-    primaryHover: string;
+    primaryHover?: string;
     secondary: string;
     background: string;
     text: string;
+    chat_button?: string;
   };
   branding: {
     logo_url?: string;
-    assistant_name: string;
-    subtitle: string;
+    assistant_name?: string;
+    subtitle?: string;
   };
+  welcome_message?: string;
   language: Language;
-  position: 'bottom-right' | 'bottom-left';
+  position: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
+  size?: string;
   features: {
     voice: boolean;
     human_support: boolean;
     simple_mode: boolean;
     job_assistance: boolean;
-    low_bandwidth: boolean;
+    low_bandwidth?: boolean;
+    course_assistant?: boolean;
   };
 }

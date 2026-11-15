@@ -8,11 +8,13 @@ export const DEFAULT_CONFIG: PlatformConfig = {
     secondary: '#14532D',
     background: '#FFFFFF',
     text: '#0F172A',
+    chat_button: '#16A34A',
   },
   branding: {
     assistant_name: 'Meri (መሪ)',
     subtitle: 'AI Guide • አስጠኚ',
   },
+  welcome_message: 'Welcome to Savanna! How can I assist your studies or career today?',
   language: 'en',
   position: 'bottom-right',
   features: {
@@ -21,6 +23,7 @@ export const DEFAULT_CONFIG: PlatformConfig = {
     simple_mode: true,
     job_assistance: true,
     low_bandwidth: true,
+    course_assistant: true,
   },
 };
 
@@ -47,7 +50,13 @@ export async function fetchPlatformConfig(publicKey?: string): Promise<PlatformC
   const url = `${apiBase}/api/v1/plugin/config/${encodeURIComponent(publicKey)}`;
 
   try {
-    const res = await fetch(url, { headers: { Accept: 'application/json' } });
+    const res = await fetch(url, {
+      cache: 'no-store',
+      headers: {
+        Accept: 'application/json',
+        'Cache-Control': 'no-cache',
+      },
+    });
     if (res.ok) {
       const data = await res.json();
       return {
@@ -56,13 +65,18 @@ export async function fetchPlatformConfig(publicKey?: string): Promise<PlatformC
         theme: {
           ...DEFAULT_CONFIG.theme,
           ...(data.theme || {}),
+          primaryHover: data.theme?.primaryHover || data.theme?.primary || DEFAULT_CONFIG.theme.primaryHover,
+          chat_button: data.theme?.chat_button || data.theme?.primary || DEFAULT_CONFIG.theme.chat_button,
         },
         branding: {
           ...DEFAULT_CONFIG.branding,
           ...(data.branding || {}),
+          assistant_name: data.branding?.assistant_name || `${data.platform_name || DEFAULT_CONFIG.platform_name} Assistant`,
         },
+        welcome_message: data.welcome_message || DEFAULT_CONFIG.welcome_message,
         language: data.language || DEFAULT_CONFIG.language,
         position: data.position || DEFAULT_CONFIG.position,
+        size: data.size || DEFAULT_CONFIG.size,
         features: {
           ...DEFAULT_CONFIG.features,
           ...(data.features || {}),
@@ -77,9 +91,19 @@ export async function fetchPlatformConfig(publicKey?: string): Promise<PlatformC
 }
 
 export function applyThemeVariables(element: HTMLElement, config: PlatformConfig) {
-  element.style.setProperty('--meri-primary', config.theme.primary);
-  element.style.setProperty('--meri-primary-hover', config.theme.primaryHover);
-  element.style.setProperty('--meri-secondary', config.theme.secondary);
-  element.style.setProperty('--meri-bg', config.theme.background);
-  element.style.setProperty('--meri-text', config.theme.text);
+  const primary = config.theme.primary || '#16A34A';
+  const primaryHover = config.theme.primaryHover || primary;
+  const secondary = config.theme.secondary || '#14532D';
+  const bg = config.theme.background || '#FFFFFF';
+  const text = config.theme.text || '#0F172A';
+  const chatBtn = config.theme.chat_button || primary;
+
+  element.style.setProperty('--meri-primary', primary);
+  element.style.setProperty('--meri-primary-hover', primaryHover);
+  element.style.setProperty('--meri-secondary', secondary);
+  element.style.setProperty('--meri-bg', bg);
+  element.style.setProperty('--meri-text', text);
+  element.style.setProperty('--meri-chat-button', chatBtn);
+  element.style.setProperty('--meri-chat-btn', chatBtn);
+  element.style.setProperty('--meri-accent', primary);
 }

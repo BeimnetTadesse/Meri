@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Paperclip, Mic, Send, Lock } from 'lucide-react';
-import { Language } from '../types';
+import { Language, PlatformConfig } from '../types';
 
 interface MessageInputProps {
   onSendMessage: (text: string) => void;
@@ -8,6 +8,7 @@ interface MessageInputProps {
   isLoading: boolean;
   isListening: boolean;
   onToggleListening: () => void;
+  config?: PlatformConfig;
 }
 
 export const MessageInput: React.FC<MessageInputProps> = ({
@@ -16,9 +17,12 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   isLoading,
   isListening,
   onToggleListening,
+  config,
 }) => {
   const [text, setText] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const primaryColor = config?.theme?.primary || '#16A34A';
+  const allowVoice = config?.features?.voice !== false;
 
   const handleSend = () => {
     if (text.trim() && !isLoading) {
@@ -51,22 +55,27 @@ export const MessageInput: React.FC<MessageInputProps> = ({
           <Paperclip className="w-4 h-4" />
         </button>
 
-        {/* Voice Input Mic Button */}
-        <button
-          type="button"
-          onClick={onToggleListening}
-          title={isListening ? 'ማዳመጥ አቁም (Stop voice)' : 'በድምጽ ይጠይቁ (Voice input)'}
-          className={`relative p-1.5 rounded-lg transition-all ${
-            isListening
-              ? 'bg-emerald-600 text-white animate-pulse'
-              : 'text-slate-500 hover:text-emerald-700 hover:bg-slate-200/60'
-          }`}
-        >
-          <Mic className="w-4 h-4" />
-          {isListening && (
-            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-ping"></span>
-          )}
-        </button>
+        {/* Voice Input Mic Button (respects feature flag) */}
+        {allowVoice && (
+          <button
+            type="button"
+            onClick={onToggleListening}
+            title={isListening ? 'ማዳመጥ አቁም (Stop voice)' : 'በድምጽ ይጠይቁ (Voice input)'}
+            style={{
+              backgroundColor: isListening ? primaryColor : undefined,
+            }}
+            className={`relative p-1.5 rounded-lg transition-all ${
+              isListening
+                ? 'text-white animate-pulse'
+                : 'text-slate-500 hover:text-emerald-700 hover:bg-slate-200/60'
+            }`}
+          >
+            <Mic className="w-4 h-4" />
+            {isListening && (
+              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-ping"></span>
+            )}
+          </button>
+        )}
 
         {/* Text Input */}
         <input
@@ -92,9 +101,12 @@ export const MessageInput: React.FC<MessageInputProps> = ({
           type="button"
           onClick={handleSend}
           disabled={!text.trim() || isLoading}
+          style={{
+            backgroundColor: text.trim() && !isLoading ? primaryColor : undefined,
+          }}
           className={`p-2 rounded-lg font-bold flex items-center justify-center transition-all ${
             text.trim() && !isLoading
-              ? 'bg-emerald-700 hover:bg-emerald-800 text-white shadow-xs active:scale-95'
+              ? 'text-white shadow-xs active:scale-95 hover:brightness-110'
               : 'bg-slate-200 text-slate-400 cursor-not-allowed'
           }`}
           title="Send message (ላክ)"
@@ -106,7 +118,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
       {/* Footer helper & encryption row */}
       <div className="flex items-center justify-between text-[11px] text-slate-400 mt-2 px-1">
         <div className="flex items-center gap-1 text-slate-500">
-          <Lock className="w-3 h-3 text-emerald-600" />
+          <Lock className="w-3 h-3" style={{ color: primaryColor }} />
           <span>{language === 'am' ? 'የተጠበቀ እና ሚስጥራዊ' : 'Private & End-to-End Encrypted'}</span>
         </div>
 
