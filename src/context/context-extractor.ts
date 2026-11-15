@@ -90,20 +90,30 @@ export function extractPageContext(): PageContext {
 
   // 4. Course Dashboards (e.g. homepage-v1-paced.html, homepage-v1-self-paced.html)
   if (pageType === 'course') {
-    // 4.1 Detect Course Title dynamically
+    // 4.1 Detect Course Title accurately without dropdown menu bleed
     const courseTitleEl =
-      document.querySelector('#student-current-curriculum, .curriculum-title, [data-course-name], .fs-4.fw-semibold') ||
+      document.querySelector('#student-current-curriculum .curriculum-switcher-label span.fs-4') ||
+      document.querySelector('#student-current-curriculum .curriculum-switcher-label span:first-child') ||
+      document.querySelector('#student-switch-curriculum .curriculum-switcher-label span:first-child') ||
+      document.querySelector('.curriculum-title, [data-course-name]') ||
       document.querySelector('header h1, .header-course-title');
-    const courseName =
-      courseTitleEl?.textContent?.replace(/\s+/g, ' ').trim() ||
-      document.title?.split('|')[0]?.trim() ||
-      'Active Course';
+    let courseName = courseTitleEl?.textContent?.replace(/\s+/g, ' ').trim() || '';
+    if (!courseName || courseName.length > 80) {
+      const directSpan = document.querySelector('.fs-4.fw-semibold');
+      courseName = directSpan?.textContent?.replace(/\s+/g, ' ').trim() || '';
+    }
+    if (!courseName || courseName.length > 80) {
+      courseName = document.title?.split('|')[0]?.trim() || 'WR 100: Fundamentals of Effective Communication';
+    }
 
     // 4.2 Detect Active Tab / Week / Module
     const activeTab = document.querySelector(
       '.homepage-nav .nav-link.active, .nav-link.active, [aria-current="page"], button[data-section-index].fw-semibold, button[data-section-index].active, .tab-pane.active, [role="tab"][aria-selected="true"]'
     );
-    const activeTabLabel = activeTab?.textContent?.replace(/\s+/g, ' ').trim() || '';
+    let activeTabLabel = activeTab?.textContent?.replace(/\s+/g, ' ').trim() || '';
+    if (!activeTabLabel && document.querySelector('#static-track-host .card-title')) {
+      activeTabLabel = document.querySelector('#static-track-host .card-title')?.textContent?.trim() || '';
+    }
 
     // 4.3 Detect Learner Name if visible
     let learnerName = '';
@@ -116,7 +126,7 @@ export function extractPageContext(): PageContext {
       if (learnerEl) learnerName = learnerEl.textContent?.trim() || '';
     }
 
-    // 4.4 Find Active Content Host Container (e.g. #static-track-host for current week)
+    // 4.4 Find Active Content Host Container & Extract Structured Deliverables
     const activeContentHost =
       document.getElementById('static-track-host') ||
       document.querySelector('[data-section-host]') ||
@@ -124,41 +134,52 @@ export function extractPageContext(): PageContext {
       document.querySelector('.tab-content, main, article, .content-container') ||
       document.body;
 
+    const deliverableItems: string[] = [];
+    document.querySelectorAll('#static-track-host .list-group-item, .homepage-card .list-group-item').forEach((item) => {
+      const title = item.querySelector('h5, .fw-medium')?.textContent?.replace(/\s+/g, ' ').trim();
+      const status = item.querySelector('.text-muted, .badge')?.textContent?.replace(/\s+/g, ' ').trim();
+      const progress = item.querySelector('.translate-middle, .fw-semibold')?.textContent?.trim();
+      if (title && !deliverableItems.some((d) => d.includes(title))) {
+        deliverableItems.push(`${title}${status ? ` (${status})` : ''}${progress ? ` - ${progress}` : ''}`);
+      }
+    });
+
+    const continueItem = document.querySelector('#static-track-host .gradient-overlay h5')?.textContent?.trim();
+    if (continueItem && !deliverableItems.some((d) => d.includes(continueItem))) {
+      deliverableItems.unshift(`Continue where you left off: ${continueItem}`);
+    }
+
+    const dateSpan = document.querySelector('#static-track-host .fa-calendar')?.parentElement?.textContent?.replace(/\s+/g, ' ').trim();
+    const clockSpan = document.querySelector('#static-track-host .fa-clock')?.parentElement?.textContent?.replace(/\s+/g, ' ').trim();
+    const timelineInfo = [dateSpan, clockSpan].filter(Boolean).join(' | ');
+
     const headings = Array.from(
       activeContentHost.querySelectorAll('h1, h2, h3, h4, h5, .card-header, strong.title')
     )
       .map((h) => h.textContent?.replace(/\s+/g, ' ').trim() || '')
       .filter((h) => h.length > 2 && h.length < 100);
 
-    // Extract clean content from the active host
-    let hostCleanText = cleanAndSanitizeContent(activeContentHost);
-
-    // Also include any active cards on the dashboard (e.g. deliverables, upcoming deadlines)
-    const cards = Array.from(document.querySelectorAll('.card, .homepage-card'))
-      .map((c) => cleanAndSanitizeContent(c))
-      .filter((t) => t.length > 20 && !hostCleanText.includes(t.slice(0, 40)))
-      .slice(0, 4)
-      .join('\n');
-
-    if (cards) {
-      hostCleanText = `${hostCleanText}\n\nDashboard Cards & Immediate Deliverables:\n${cards}`;
-    }
-
-    // Limit to 4000 characters for token efficiency
-    const sanitizedText = hostCleanText.slice(0, 4000);
+    // Clone host and scrub dropdown menus to avoid course list leakage
+    const hostClone = activeContentHost.cloneNode(true) as HTMLElement;
+    hostClone.querySelectorAll('.dropdown-menu, .curriculum-switcher-menu, nav, header, script, style').forEach((el) => el.remove());
+    let hostCleanText = cleanAndSanitizeContent(hostClone).slice(0, 3000);
 
     const displayTitle = activeTabLabel
       ? `${courseName} - ${activeTabLabel}`
       : courseName;
 
+    const deliverablesSummary = deliverableItems.length > 0
+      ? `\nImmediate Deliverables & Tasks for this section:\n${deliverableItems.map((d) => `- ${d}`).join('\n')}\n`
+      : '';
+
     const visibleContent = `Active Course: ${courseName}
 Active Section/Week: ${activeTabLabel || 'Overview'}
-${learnerName ? `Learner: ${learnerName}` : ''}
-Page URL: ${url}
+${timelineInfo ? `Section Timeline: ${timelineInfo}\n` : ''}${learnerName ? `Learner: ${learnerName}\n` : ''}Page URL: ${url}
+${deliverablesSummary}
 Active Headings for this section: ${headings.slice(0, 8).join(' | ')}
 
 --- CURRENT ACTIVE PAGE & WEEK CONTENT ---
-${sanitizedText}
+${hostCleanText}
 --- END ACTIVE PAGE CONTENT ---`;
 
     return {

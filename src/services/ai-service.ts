@@ -25,9 +25,14 @@ export async function askMeriAI(
       headers['X-Public-Key'] = publicKey;
     }
 
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timeoutId = controller ? setTimeout(() => controller.abort(), 15000) : null;
+
+    console.log('[Meri] Sending message to backend:', `${apiBase}/api/v1/chat/messages`);
     const res = await fetch(`${apiBase}/api/v1/chat/messages`, {
       method: 'POST',
       headers,
+      signal: controller?.signal,
       body: JSON.stringify({
         message: question,
         context: {
@@ -40,9 +45,11 @@ export async function askMeriAI(
         simple_mode: simpleMode,
       }),
     });
+    if (timeoutId) clearTimeout(timeoutId);
 
     if (res.ok) {
       const data = await res.json();
+      console.log('[Meri] Backend response received successfully. Provider:', data.provider_used);
       const mappedCitations: Citation[] = (data.citations || []).map(
         (
           c: { title?: string; source_type?: string; snippet?: string; relevance_score?: number },
@@ -56,14 +63,19 @@ export async function askMeriAI(
         })
       );
 
-      return {
-        answer: data.response || data.answer || '',
-        citations: mappedCitations,
-        source: data.provider_used === 'gemini' || data.provider_used === 'groq' ? 'cloud' : 'offline_faq',
-      };
+      const responseText = data.response || data.answer || '';
+      if (responseText.trim()) {
+        return {
+          answer: responseText,
+          citations: mappedCitations,
+          source: data.provider_used === 'gemini' || data.provider_used === 'groq' ? 'cloud' : 'offline_faq',
+        };
+      }
+    } else {
+      console.warn('[Meri] Backend returned non-200 status:', res.status);
     }
-  } catch {
-    // Fall through to resilient local knowledge engine
+  } catch (err) {
+    console.warn('[Meri] Backend fetch notice (using offline local knowledge):', err);
   }
 
   // 2. Pluggable Offline / Local Knowledge Base Engine
@@ -241,61 +253,149 @@ function generateKnowledgeBaseResponse(
   // --- 3. COURSE DASHBOARDS ---
   // ==========================================
   if (context.pageType === 'course') {
-    if (context.url.includes('paced') && !context.url.includes('self-paced')) {
-      if (language === 'am') {
+    const isAm = language === 'am';
+    const isDeliverableQuery =
+      q.includes('deliver') ||
+      q.includes('assign') ||
+      q.includes('graded') ||
+      q.includes('due') ||
+      q.includes('deadline') ||
+      q.includes('task') ||
+      q.includes('do') ||
+      q.includes('ሥራ') ||
+      q.includes('ተግባር') ||
+      q.includes('ሳምንት') ||
+      q.includes('week') ||
+      q.includes('ምን');
+
+    const isSummaryQuery =
+      q.includes('summar') ||
+      q.includes('explain') ||
+      q.includes('what is') ||
+      q.includes('about') ||
+      q.includes('overview') ||
+      q.includes('ማጠቃለያ') ||
+      q.includes('አብራራ');
+
+    // Extract lines that look like deliverables from visibleContent
+    const lines = context.visibleContent.split('\n').map((l) => l.trim()).filter(Boolean);
+    const delivLines = lines.filter(
+      (l) =>
+        l.includes('GRADED') ||
+        l.includes('Intro to') ||
+        l.includes('Deliverables') ||
+        l.includes('writing clinic') ||
+        l.includes('Peer Learning') ||
+        l.startsWith('- ')
+    );
+    const delivText = delivLines.slice(0, 6).join('\n');
+
+    if (isDeliverableQuery && delivText) {
+      if (isAm) {
         return {
-          answer: `በWR 100 ሳምንት 10 ላይ ነዎት። የውጤት ሁኔታዎ 59.56% ሲሆን፣ በዚህ ሳምንት የውይይት መድረክ እና የጽሁፍ ምልከታ ስራ ይጠበቅብዎታል።`,
+          answer: `በዚህ ሳምንት የሚጠበቁብዎት ዋና ዋና ተግባራትና ምደባዎች የሚከተሉት ናቸው፡\n\n${delivText}\n\nእባክዎን የተሰጡትን ስራዎች በተጠቀሰው የጊዜ ገደብ ውስጥ ያጠናቁ!`,
           citations: [
             {
-              id: 'c-wr100-deliv',
-              title: 'WR 100 Dashboard',
+              id: 'c-course-deliv',
+              title: context.title || 'Course Dashboard',
               section: 'Immediate Deliverables',
-              snippet: 'Peer review discussion and written reflection due Sunday midnight.',
+              snippet: delivText.slice(0, 180),
             },
           ],
           source: 'offline_faq',
         };
       }
       return {
-        answer: `You are on Week 10 of WR 100: Fundamentals of Effective Communication. Your current cohort progress is 59.56%. Immediate deliverables include your Peer Review Discussion and Written Reflection due this Sunday.`,
+        answer: `Here are your key deliverables and tasks for **${context.courseName || 'this active section'}**:\n\n${delivText}\n\nPlease be sure to complete the graded components before the deadline!`,
         citations: [
           {
-            id: 'c-wr100-deliv',
-            title: 'WR 100 Dashboard',
+            id: 'c-course-deliv',
+            title: context.title || 'Course Dashboard',
             section: 'Immediate Deliverables',
-            snippet: 'Peer review discussion and written reflection due Sunday midnight.',
-          },
-        ],
-        source: 'offline_faq',
-      };
-    } else {
-      if (language === 'am') {
-        return {
-          answer: `በVA-1: Foundations ሞጁል 1ን አጠናቀዋል። አጠቃላይ እድገትዎ 16% ሲሆን፣ ቀጣዩ ደረጃ ሞጁል 2 (The Future of the VA Industry) ነው።`,
-          citations: [
-            {
-              id: 'c-va1-dash',
-              title: 'VA-1: Self-Paced Track',
-              section: 'Course Progression Gauge',
-              snippet: '16% toward 70% graduation threshold. Module 2 ready to launch.',
-            },
-          ],
-          source: 'offline_faq',
-        };
-      }
-      return {
-        answer: `You are on VA-1: VA Foundations & Professional Identity. Module 1 is complete, placing you at 16% toward the 70% threshold. You are ready to start Module 2: The Future of the VA Industry.`,
-        citations: [
-          {
-            id: 'c-va1-dash',
-            title: 'VA-1: Self-Paced Track',
-            section: 'Course Progression Gauge',
-            snippet: '16% toward 70% graduation threshold. Module 2 ready to launch.',
+            snippet: delivText.slice(0, 180),
           },
         ],
         source: 'offline_faq',
       };
     }
+
+    if (isSummaryQuery) {
+      if (isAm) {
+        return {
+          answer: `ይህ ገጽ ለ**${context.courseName || 'ኮርሱ'}** የተዘጋጀ ንቁ የትምህርት ዳሽቦርድ ነው። በዚህ ሳምንት ዋና ዋና የትምህርት ርዕሶች እና የተገመገሙ ተግባራት ተዘርዝረዋል፡\n\n${delivText || context.visibleContent.slice(0, 200)}`,
+          citations: [
+            {
+              id: 'c-course-sum',
+              title: context.title || 'Course Dashboard',
+              section: 'Section Overview',
+              snippet: context.visibleContent.slice(0, 180),
+            },
+          ],
+          source: 'offline_faq',
+        };
+      }
+      return {
+        answer: `**Overview of ${context.title || 'Current Section'}**:\n\nYou are on the active dashboard for **${context.courseName || 'your course'}**.\n\n${delivText ? `**Current Tasks & Deliverables:**\n${delivText}` : context.visibleContent.slice(0, 250)}`,
+        citations: [
+          {
+            id: 'c-course-sum',
+            title: context.title || 'Course Dashboard',
+            section: 'Section Overview',
+            snippet: context.visibleContent.slice(0, 180),
+          },
+        ],
+        source: 'offline_faq',
+      };
+    }
+
+    // Keyword matching fallback for any other course inquiry
+    const queryWords = q.split(/\s+/).filter((w) => w.length > 3);
+    const matched = lines.filter((l) => queryWords.some((w) => l.toLowerCase().includes(w)));
+    if (matched.length > 0) {
+      const snippet = matched.slice(0, 3).join('. ');
+      return {
+        answer: isAm
+          ? `በገጹ ላይ ባለው መረጃ መሰረት፡ ${snippet}።`
+          : `Based on your course page: ${snippet}.`,
+        citations: [
+          {
+            id: 'c-course-match',
+            title: context.title || 'Course Dashboard',
+            section: 'Course Content',
+            snippet: snippet.slice(0, 180),
+          },
+        ],
+        source: 'offline_faq',
+      };
+    }
+
+    // Default friendly response
+    if (isAm) {
+      return {
+        answer: `በ${context.courseName || 'ኮርሱ'} ንቁ ገጽ ላይ ነዎት። ስለ ሳምንቱ ስራዎች፣ የቤት ስራዎች ወይም የትምህርት ርዕሶች መጠየቅ ይችላሉ።`,
+        citations: [
+          {
+            id: 'c-course-def',
+            title: context.title || 'Course Dashboard',
+            section: 'General Info',
+            snippet: context.visibleContent.slice(0, 150),
+          },
+        ],
+        source: 'offline_faq',
+      };
+    }
+    return {
+      answer: `You are on the dashboard for **${context.courseName || 'your course'}**. You can ask about this week's assignments, deliverables, timelines, or course topics!`,
+      citations: [
+        {
+          id: 'c-course-def',
+          title: context.title || 'Course Dashboard',
+          section: 'General Info',
+          snippet: context.visibleContent.slice(0, 150),
+        },
+      ],
+      source: 'offline_faq',
+    };
   }
 
   // ==========================================
