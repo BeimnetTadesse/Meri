@@ -29,15 +29,25 @@ export const DEFAULT_CONFIG: PlatformConfig = {
 
 export function getApiBaseUrl(): string {
   if (typeof window === 'undefined') return '';
+
+  // 1. Explicit data-api-base on script tag or global window variable
   const script =
     document.querySelector('script[data-api-base]') ||
     document.querySelector('script[data-public-key]');
   const customBase =
-    script?.getAttribute('data-api-base') || (window as unknown as { __MERI_API_BASE__?: string }).__MERI_API_BASE__;
+    script?.getAttribute('data-api-base') ||
+    (window as unknown as { __MERI_API_BASE__?: string }).__MERI_API_BASE__;
   if (customBase) return customBase.replace(/\/+$/, '');
+
+  // 2. Build-time Vite environment variable (e.g. VITE_API_BASE_URL on Vercel)
+  const envBase = (import.meta as unknown as { env?: { VITE_API_BASE_URL?: string } })?.env?.VITE_API_BASE_URL;
+  if (envBase) return envBase.replace(/\/+$/, '');
+
+  // 3. Localhost fallback
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
     return 'http://localhost:8000';
   }
+
   return '';
 }
 
