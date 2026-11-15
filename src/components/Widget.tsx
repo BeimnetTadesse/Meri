@@ -384,6 +384,10 @@ export const Widget: React.FC<WidgetProps> = ({ publicKey, config: initialConfig
         isOpen={showLiveHelp}
         onClose={() => setShowLiveHelp(false)}
         language={language}
+        publicKey={publicKey}
+        platformName={liveConfig?.platform_name || 'Savanna'}
+        context={context}
+        theme={liveConfig?.theme}
       />
 
       {/* Career Gateway: Interview Accommodations Modal */}
