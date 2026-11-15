@@ -48,7 +48,8 @@ export function getApiBaseUrl(): string {
     return 'http://localhost:8000';
   }
 
-  return '';
+  // 4. Default live backend fallback
+  return 'https://meri-back.onrender.com';
 }
 
 export async function fetchPlatformConfig(publicKey?: string): Promise<PlatformConfig> {
