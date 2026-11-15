@@ -104,8 +104,12 @@ export const HumanHelpModal: React.FC<HumanHelpModalProps> = ({
   if (!isOpen) return null;
 
   const handleToggleScreenShare = async () => {
+    const apiBase = getApiBaseUrl();
     if (isSharing) {
       ScreenShareService.stopSharing();
+      if (activeTicket) {
+        ScreenShareService.stopFrameBroadcaster(activeTicket.id, apiBase);
+      }
       setIsSharing(false);
       setStream(null);
     } else {
@@ -113,17 +117,26 @@ export const HumanHelpModal: React.FC<HumanHelpModalProps> = ({
         () => {
           setIsSharing(false);
           setStream(null);
+          if (activeTicket) {
+            ScreenShareService.stopFrameBroadcaster(activeTicket.id, apiBase);
+          }
         },
         (err) => {
           console.warn('[Meri] Screen share error:', err);
           setIsSharing(false);
           setStream(null);
+          if (activeTicket) {
+            ScreenShareService.stopFrameBroadcaster(activeTicket.id, apiBase);
+          }
         }
       );
 
       if (activeStream) {
         setIsSharing(true);
         setStream(activeStream);
+        if (activeTicket) {
+          ScreenShareService.startFrameBroadcaster(activeTicket.id, apiBase, publicKey);
+        }
       }
     }
   };
@@ -161,6 +174,11 @@ export const HumanHelpModal: React.FC<HumanHelpModalProps> = ({
         const ticket: SupportTicketData = await res.json();
         setActiveTicket(ticket);
         setViewState('waiting');
+
+        // If screen sharing is enabled, start broadcasting frames immediately
+        if (isSharing && stream) {
+          ScreenShareService.startFrameBroadcaster(ticket.id, apiBase, publicKey);
+        }
 
         // Start polling for tutor acceptance
         startPolling(ticket.id);
@@ -279,11 +297,19 @@ export const HumanHelpModal: React.FC<HumanHelpModalProps> = ({
     } catch (e) {
       console.warn(e);
     }
+    ScreenShareService.stopSharing();
+    ScreenShareService.stopFrameBroadcaster(activeTicket?.id, apiBase);
+    setIsSharing(false);
+    setStream(null);
     stopPolling();
     setViewState('resolved');
   };
 
   const handleModalClose = () => {
+    ScreenShareService.stopSharing();
+    ScreenShareService.stopFrameBroadcaster(activeTicket?.id, getApiBaseUrl());
+    setIsSharing(false);
+    setStream(null);
     stopPolling();
     onClose();
   };
